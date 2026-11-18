@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ユーザ管理・登録画面 - 勤怠管理システム</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 0.9em; }
+        th { background: #333; color: #fff; }
+        .form-section { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-weight: bold; margin-bottom: 3px; font-size: 0.9em; }
+        input, select { width: 100%; padding: 6px; box-sizing: border-box; }
+        button { padding: 8px 16px; background: #1976d2; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #d32f2f; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h2>管理者機能：ユーザ管理・登録</h2>
+    <div>
+        <a th:href="@{/working_time}"><button type="button">勤務時間集計へ</button></a>
+        <a th:href="@{/attendance}"><button type="button">勤怠画面へ戻る</button></a>
+    </div>
+</div>
+
+<div class="container">
+    <h3>登録ユーザ一覧</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>名前</th>
+                <th>部署</th>
+                <th>勤務地</th>
+                <th>権限</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="u : ${userList}">
+                <td th:text="${u.userId}"></td>
+                <td th:text="${u.userName}"></td>
+                <td th:text="${u.departmentId}"></td>
+                <td th:text="${u.workLocationId}"></td>
+                <td th:text="${u.roleId}"></td>
+                <td>
+                    <form th:action="@{/user_edit/delete}" method="post" style="display:inline;">
+                        <input type="hidden" name="userId" th:value="${u.userId}">
+                        <button type="submit" class="btn-danger" onclick="return confirm('本当に削除しますか？');">削除</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="form-section">
+        <h3>新規登録 / 編集</h3>
+        <form th:action="@{/user_edit/save}" th:object="${userForm}" method="post">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>ユーザID (8桁半角数字)</label>
+                    <input type="text" th:field="*{userId}" maxlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label>氏名</label>
+                    <input type="text" th:field="*{userName}" required>
+                </div>
+                <div class="form-group">
+                    <label>パスワード</label>
+                    <input type="password" th:field="*{password}" placeholder="変更時のみ入力">
+                </div>
+                <div class="form-group">
+                    <label>メールアドレス</label>
+                    <input type="email" th:field="*{emailAddress}">
+                </div>
+                <div class="form-group">
+                    <label>電話番号</label>
+                    <input type="text" th:field="*{phoneNumber}">
+                </div>
+                <div class="form-group">
+                    <label>部署</label>
+                    <select th:field="*{departmentId}">
+                        <option value="D01">開発部</option>
+                        <option value="D02">営業部</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>勤務地</label>
+                    <select th:field="*{workLocationId}">
+                        <option value="L01">愛知県</option>
+                        <option value="L02">東京都</option>
+                        <option value="L03">大阪府</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>権限</label>
+                    <select th:field="*{roleId}">
+                        <option value="R02">従業員</option>
+                        <option value="R01">管理者</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" style="margin-top: 15px;">保存する</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
