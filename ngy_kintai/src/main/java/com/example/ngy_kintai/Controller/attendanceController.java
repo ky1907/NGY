@@ -108,6 +108,6 @@ public class attendanceController {
         }
 
         // 決定後、カレンダー画面へ遷移
-        return "redirect:/calender";
+        return "redirect:/calendar";
     }
 }
