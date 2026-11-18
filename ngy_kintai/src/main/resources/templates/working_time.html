@@ -43,7 +43,7 @@
     <div th:if="${monthlySummary != null}" class="summary-box">
         <h3>月間集計サマリー (<span th:text="${selectedYearMonth}"></span>)</h3>
         <p>総実働時間: <strong th:text="${T(java.lang.Math).floor(monthlySummary.monthlyActualMinutes / 60) + '時間 ' + (monthlySummary.monthlyActualMinutes % 60) + '分'}"></strong></p>
-        <p>総残業時間: <strong th:text="${T(java.lang.Math).floor(monthlySummary.monthlyOvertimeMinutes / 60) + '시간 ' + (monthlySummary.monthlyOvertimeMinutes % 60) + '分'}"></strong></p>
+        <p>総残業時間: <strong th:text="${T(java.lang.Math).floor(monthlySummary.monthlyOvertimeMinutes / 60) + '時間 ' + (monthlySummary.monthlyOvertimeMinutes % 60) + '分'}"></strong></p>
     </div>
 
     <div th:if="${dailyList != null}">
