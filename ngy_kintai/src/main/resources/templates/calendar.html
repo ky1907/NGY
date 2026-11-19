@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>個人カレンダー (S0103)</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .calendar-day { min-height: 120px; vertical-align: top; }
+        .event-badge { font-size: 0.8rem; cursor: pointer; display: block; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container mt-4">
+    <!-- ヘッダー・月切り替え -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>個人カレンダー</h2>
+        <div>
+            <a th:href="@{/calendar(year=${prevYear}, month=${prevMonth})}" class="btn btn-outline-secondary btn-sm">&lt; 前月</a>
+            <span class="fs-4 fw-bold mx-3" th:text="${currentYear + '年 ' + currentMonth + '月'}">2026年 11月</span>
+            <a th:href="@{/calendar(year=${nextYear}, month=${nextMonth})}" class="btn btn-outline-secondary btn-sm">次月 &gt;</a>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ 予定を追加</button>
+    </div>
+
+    <!-- 登録済みイベントの一覧表示 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">今月の登録予定一覧</div>
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(events)}" class="text-muted">予定はありません。</div>
+            <div class="list-group">
+                <div th:each="ev : ${events}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold" th:text="${ev.title}">タイトル</span>
+                        <small class="text-muted ms-2" th:text="${#temporals.format(ev.startTime, 'yyyy-MM-dd HH:mm') + ' ～ ' + #temporals.format(ev.endTime, 'HH:mm')}">日時</small>
+                        <p class="mb-0 text-secondary small" th:text="${ev.detail}">詳細</p>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" 
+                            th:attr="onclick=|openEditModal('${ev.calendarId}', '${ev.title}', '${ev.startTime}', '${ev.endTime}', '${ev.detail}')|">
+                        編集
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 予定 登録・編集モーダル -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/calendar/save}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">予定の登録</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- calendarId（更新時に使用） -->
+                    <input type="hidden" id="calendarId" name="calendarId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">タイトル</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="row">
+                        <div class="col mb-3">
+                            <label class="form-label">開始日時</label>
+                            <input type="datetime-local" class="form-control" id="startTime" name="startTime" required>
+                        </div>
+                        <div class="col mb-3">
+                            <label class="form-label">終了日時</label>
+                            <input type="datetime-local" class="form-control" id="endTime" name="endTime" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">詳細メモ</label>
+                        <textarea class="form-control" id="detail" name="detail" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none;" onclick="deleteEvent()">削除</button>
+                    <div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+
+    function openCreateModal() {
+        document.getElementById('modalTitle').innerText = '予定の登録';
+        document.getElementById('calendarId').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('startTime').value = '';
+        document.getElementById('endTime').value = '';
+        document.getElementById('detail').value = '';
+        document.getElementById('deleteBtn').style.display = 'none';
+        modal.show();
+    }
+
+    function openEditModal(id, title, startTime, endTime, detail) {
+        document.getElementById('modalTitle').innerText = '予定の編集';
+        document.getElementById('calendarId').value = id;
+        document.getElementById('title').value = title;
+        document.getElementById('startTime').value = startTime.replace(' ', 'T');
+        document.getElementById('endTime').value = endTime.replace(' ', 'T');
+        document.getElementById('detail').value = detail !== 'null' ? detail : '';
+        document.getElementById('deleteBtn').style.display = 'block';
+        modal.show();
+    }
+
+    function deleteEvent() {
+        const id = document.getElementById('calendarId').value;
+        if (confirm('この予定を削除しますか？')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/calendar/delete/' + id;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
+</body>
+</html>
