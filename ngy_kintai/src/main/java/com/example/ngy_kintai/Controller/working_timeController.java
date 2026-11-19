@@ -1,11 +1,11 @@
 package com.example.ngy_kintai.Controller;
 
-import com.example.ngy_kintai.Entity.user_Entity;
-import com.example.ngy_kintai.Entity.time_management_Entity;
 import com.example.ngy_kintai.Entity.month_time_management_Entity;
-import com.example.ngy_kintai.Repository.user_Repository;
-import com.example.ngy_kintai.Repository.time_management_Repository;
+import com.example.ngy_kintai.Entity.time_management_Entity;
+import com.example.ngy_kintai.Entity.user_Entity;
 import com.example.ngy_kintai.Repository.month_time_management_Repository;
+import com.example.ngy_kintai.Repository.time_management_Repository;
+import com.example.ngy_kintai.Repository.user_Repository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class working_timeController {
@@ -28,45 +31,58 @@ public class working_timeController {
     @Autowired
     private month_time_management_Repository monthTimeManagementRepository;
 
-    private boolean isAdmin(HttpSession session) {
-        user_Entity loginUser = (user_Entity) session.getAttribute("loginUser");
-        return loginUser != null && "R01".equals(loginUser.getRoleId());
-    }
-
-    // 勤務時間参照・集計画面（S0109）表示
     @GetMapping("/working_time")
-    public String showWorkingTime(@RequestParam(value = "userId", required = false) String userId,
-                                  @RequestParam(value = "yearMonth", required = false) String yearMonth,
-                                  HttpSession session,
-                                  Model model) {
-        if (!isAdmin(session)) return "redirect:/login";
+    public String showWorkingTime(
+            @RequestParam(value = "yearMonth", required = false) String yearMonth,
+            @RequestParam(value = "departmentId", required = false) String departmentId,
+            HttpSession session,
+            Model model) {
 
-        List<user_Entity> userList = userRepository.findAll();
+        user_Entity loginUser = (user_Entity) session.getAttribute("loginUser");
+        if (loginUser == null) return "redirect:/login";
+        model.addAttribute("loginUser", loginUser);
+
+        if (yearMonth == null || yearMonth.isEmpty()) {
+            yearMonth = LocalDate.now().toString().substring(0, 7);
+        }
+        model.addAttribute("selectedYearMonth", yearMonth);
+        model.addAttribute("selectedDepartment", departmentId);
+
+        List<user_Entity> userList;
+        if (departmentId != null && !departmentId.isEmpty()) {
+            userList = userRepository.findByDepartmentIdOrderByUserNameAsc(departmentId);
+        } else {
+            userList = userRepository.findAll();
+        }
         model.addAttribute("userList", userList);
 
-        if (userId != null && !userId.isEmpty()) {
-            model.addAttribute("selectedUserId", userId);
-            
-            // 月間集計の取得
-            if (yearMonth != null && !yearMonth.isEmpty()) {
-                model.addAttribute("selectedYearMonth", yearMonth);
-                month_time_management_Entity monthly = monthTimeManagementRepository
-                        .findByUserIdAndTargetYearMonth(userId, yearMonth)
-                        .orElse(null);
-                model.addAttribute("monthlySummary", monthly);
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDate startDate = ym.atDay(1);
+        LocalDate endDate = ym.atEndOfMonth();
+        int daysInMonth = ym.lengthOfMonth();
+        model.addAttribute("daysInMonth", daysInMonth);
 
-                // 日別データの取得（該当月の一杯から末日まで）
-                try {
-                    LocalDate startOfMonth = LocalDate.parse(yearMonth + "-01");
-                    LocalDate endOfMonth = startOfMonth.withDayOfMonth(startOfMonth.lengthOfMonth());
-                    List<time_management_Entity> dailyList = timeManagementRepository
-                            .findByUserIdAndWorkDateBetweenOrderByWorkDateAsc(userId, startOfMonth, endOfMonth);
-                    model.addAttribute("dailyList", dailyList);
-                } catch (Exception e) {
-                    // パースエラー時のフォールバック
-                }
+        Map<String, Map<LocalDate, time_management_Entity>> userMonthlyData = new HashMap<>();
+        Map<String, month_time_management_Entity> monthlySummaryMap = new HashMap<>();
+
+        for (user_Entity user : userList) {
+            List<time_management_Entity> records = timeManagementRepository
+                    .findByUserIdAndWorkDateBetweenOrderByWorkDateAsc(user.getUserId(), startDate, endDate);
+
+            Map<LocalDate, time_management_Entity> dailyMap = new HashMap<>();
+            for (time_management_Entity rec : records) {
+                dailyMap.put(rec.getWorkDate(), rec);
             }
+            userMonthlyData.put(user.getUserId(), dailyMap);
+
+            month_time_management_Entity monthly = monthTimeManagementRepository
+                    .findByUserIdAndTargetYearMonth(user.getUserId(), yearMonth)
+                    .orElse(null);
+            monthlySummaryMap.put(user.getUserId(), monthly);
         }
+
+        model.addAttribute("userMonthlyData", userMonthlyData);
+        model.addAttribute("monthlySummaryMap", monthlySummaryMap);
 
         return "working_time";
     }
