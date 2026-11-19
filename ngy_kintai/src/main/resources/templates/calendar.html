@@ -6,42 +6,156 @@
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .calendar-day { min-height: 120px; vertical-align: top; }
-        .event-badge { font-size: 0.8rem; cursor: pointer; display: block; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .calendar-table { table-layout: fixed; }
+        .calendar-day {
+            height: 125px;
+            vertical-align: top;
+            padding: 6px 2px;
+        }
+        .day-header {
+            padding: 0 4px;
+        }
+        .other-month {
+            background-color: #f8f9fa;
+            color: #adb5bd;
+        }
+        .today-cell {
+            background-color: #fff9db;
+        }
+        .event-bar {
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: block;
+            margin-top: 3px;
+            padding: 2px 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        /* 複数日予定の継続セルは横につなげる */
+        .event-bar.event-cont {
+            margin-left: -3px;
+            margin-right: -3px;
+            border-radius: 0;
+        }
+        .event-bar.event-start {
+            margin-left: 2px;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+        .event-bar.event-end {
+            margin-right: 2px;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* 予定カラーバリエーション */
+        .color-sky    { background-color: #cfe2ff; color: #084298; border-left: 3px solid #0d6efd; }
+        .color-blue   { background-color: #9ec5fe; color: #052c65; border-left: 3px solid #0a58ca; }
+        .color-green  { background-color: #d1e7dd; color: #0f5132; border-left: 3px solid #198754; }
+        .color-amber  { background-color: #fff3cd; color: #664d03; border-left: 3px solid #ffc107; }
+        .color-rose   { background-color: #f8d7da; color: #842029; border-left: 3px solid #dc3545; }
+        .color-purple { background-color: #e2d9f3; color: #3d1e73; border-left: 3px solid #6f42c1; }
+
+        .user-info-bar {
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body class="bg-light">
 
-<div class="container mt-4">
-    <!-- ヘッダー・月切り替え -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>個人カレンダー</h2>
-        <div>
-            <a th:href="@{/calendar(year=${prevYear}, month=${prevMonth})}" class="btn btn-outline-secondary btn-sm">&lt; 前月</a>
-            <span class="fs-4 fw-bold mx-3" th:text="${currentYear + '年 ' + currentMonth + '月'}">2026年 11月</span>
-            <a th:href="@{/calendar(year=${nextYear}, month=${nextMonth})}" class="btn btn-outline-secondary btn-sm">次月 &gt;</a>
+<div class="container mt-3 mb-5">
+    <!-- 左上：ユーザーID・名前表示 -->
+    <div class="d-flex justify-content-start align-items-center mb-2 user-info-bar">
+        <div class="bg-white border rounded px-3 py-1 shadow-sm d-inline-flex align-items-center gap-2">
+            <span class="text-muted">ユーザーID:</span>
+            <span class="fw-semibold" th:text="${loginUserId}"></span>
+            <span class="text-muted mx-1">|</span>
+            <span class="text-muted">氏名:</span>
+            <span class="fw-semibold" th:text="${loginUserName}"></span>
         </div>
-        <button class="btn btn-primary" onclick="openCreateModal()">+ 予定を追加</button>
     </div>
 
-    <!-- 登録済みイベントの一覧表示 -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white fw-bold">今月の登録予定一覧</div>
-        <div class="card-body">
-            <div th:if="${#lists.isEmpty(events)}" class="text-muted">予定はありません。</div>
-            <div class="list-group">
-                <div th:each="ev : ${events}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                    <div>
-                        <span class="fw-bold" th:text="${ev.title}">タイトル</span>
-                        <small class="text-muted ms-2" th:text="${#temporals.format(ev.startTime, 'yyyy-MM-dd HH:mm') + ' ～ ' + #temporals.format(ev.endTime, 'HH:mm')}">日時</small>
-                        <p class="mb-0 text-secondary small" th:text="${ev.detail}">詳細</p>
-                    </div>
-                    <button class="btn btn-sm btn-outline-primary" 
-                            th:attr="onclick=|openEditModal('${ev.calendarId}', '${ev.title}', '${ev.startTime}', '${ev.endTime}', '${ev.detail}')|">
-                        編集
-                    </button>
-                </div>
-            </div>
+    <!-- 画面タイトル -->
+    <div class="mb-3">
+        <h2>個人カレンダー</h2>
+    </div>
+
+    <!-- 操作バー：左側に「+ 予定を追加」、中央に「前月・年月・次月」 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <button type="button" class="btn btn-primary" onclick="openCreateModal()">+ 予定を追加</button>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <a th:href="@{/calendar(year=${prevYear}, month=${prevMonth})}" class="btn btn-outline-secondary btn-sm">&lt; 前月</a>
+            <span class="fs-4 fw-bold mx-3" th:text="${currentYear + '年 ' + currentMonth + '月'}"></span>
+            <a th:href="@{/calendar(year=${nextYear}, month=${nextMonth})}" class="btn btn-outline-secondary btn-sm">次月 &gt;</a>
+        </div>
+
+        <!-- 右側のバランス用スペース -->
+        <div style="width: 115px;"></div>
+    </div>
+
+    <!-- 月間カレンダー本体 -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-bordered calendar-table mb-0">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th class="text-danger">日</th>
+                        <th>月</th>
+                        <th>火</th>
+                        <th>水</th>
+                        <th>木</th>
+                        <th>金</th>
+                        <th class="text-primary">土</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="week : ${calendarWeeks}">
+                        <td th:each="day : ${week}"
+                            class="calendar-day"
+                            th:classappend="${day.monthValue != currentMonth ? 'other-month' : ''} + (${day.equals(today)} ? ' today-cell' : '')">
+                            <div class="d-flex justify-content-between align-items-center day-header">
+                                <span class="fw-bold"
+                                      th:classappend="${day.dayOfWeek.value == 7} ? 'text-danger' : (${day.dayOfWeek.value == 6} ? 'text-primary' : '')"
+                                      th:text="${day.dayOfMonth}">1</span>
+                                <span th:if="${day.equals(today)}" class="badge bg-warning text-dark" style="font-size: 0.65rem;">今日</span>
+                            </div>
+
+                            <!-- 該当日の予定（開始日〜終了日まで各セルに横棒表示） -->
+                            <th:block th:each="ev : ${events}">
+                                <th:block th:if="${ev.startTime != null}"
+                                          th:with="startD=${ev.startTime.toLocalDate()},
+                                                   endD=${(ev.endTime != null and !ev.endTime.toLocalDate().isBefore(startD)) ? ev.endTime.toLocalDate() : startD},
+                                                   rawD=${ev.detail != null ? ev.detail : ''},
+                                                   hasTag=${#strings.startsWith(rawD, '[color:') and #strings.contains(rawD, ']')},
+                                                   evColor=${hasTag ? #strings.substring(rawD, 7, #strings.indexOf(rawD, ']')) : 'sky'},
+                                                   cleanD=${hasTag ? #strings.substring(rawD, #strings.indexOf(rawD, ']') + 1) : rawD},
+                                                   isStart=${day.equals(startD)},
+                                                   isEnd=${day.equals(endD)},
+                                                   isMulti=${!startD.equals(endD)}">
+                                    <div th:if="${!day.isBefore(startD) and !day.isAfter(endD)}"
+                                         class="event-bar"
+                                         th:classappend="${'color-' + evColor} + (${isMulti and !isStart} ? ' event-cont' : '') + (${isMulti and isStart} ? ' event-start' : '') + (${isMulti and isEnd} ? ' event-end' : '')"
+                                         th:text="${isStart ? (#temporals.format(ev.startTime, 'HH:mm') + ' ' + ev.title) : ((day.dayOfWeek.value == 1) ? ev.title : ' ')}"
+                                         th:attr="data-id=${ev.calendarId},
+                                                  data-title=${ev.title},
+                                                  data-start=${#temporals.format(ev.startTime, 'yyyy-MM-dd''T''HH:mm')},
+                                                  data-end=${ev.endTime != null ? #temporals.format(ev.endTime, 'yyyy-MM-dd''T''HH:mm') : ''},
+                                                  data-detail=${cleanD},
+                                                  data-color=${evColor}"
+                                         onclick="openEditModalFromEl(this)">
+                                    </div>
+                                </th:block>
+                            </th:block>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -56,12 +170,22 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- calendarId（更新時に使用） -->
                     <input type="hidden" id="calendarId" name="calendarId">
-                    
+
                     <div class="mb-3">
                         <label class="form-label">タイトル</label>
                         <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">表示カラー</label>
+                        <select class="form-select" id="eventColor" name="eventColor">
+                            <option value="sky">水色（通常・業務）</option>
+                            <option value="blue">青（会議・打ち合わせ）</option>
+                            <option value="green">緑（休暇・外出）</option>
+                            <option value="amber">黄色（注意・リマインド）</option>
+                            <option value="rose">赤（重要・締切）</option>
+                            <option value="purple">紫（その他）</option>
+                        </select>
                     </div>
                     <div class="row">
                         <div class="col mb-3">
@@ -97,8 +221,11 @@
 
     function openCreateModal() {
         document.getElementById('modalTitle').innerText = '予定の登録';
-        document.getElementById('calendarId').value = '';
+        const idInput = document.getElementById('calendarId');
+        idInput.value = '';
+        idInput.disabled = true;
         document.getElementById('title').value = '';
+        document.getElementById('eventColor').value = 'sky';
         document.getElementById('startTime').value = '';
         document.getElementById('endTime').value = '';
         document.getElementById('detail').value = '';
@@ -106,20 +233,23 @@
         modal.show();
     }
 
-    function openEditModal(id, title, startTime, endTime, detail) {
+    function openEditModalFromEl(el) {
         document.getElementById('modalTitle').innerText = '予定の編集';
-        document.getElementById('calendarId').value = id;
-        document.getElementById('title').value = title;
-        document.getElementById('startTime').value = startTime.replace(' ', 'T');
-        document.getElementById('endTime').value = endTime.replace(' ', 'T');
-        document.getElementById('detail').value = detail !== 'null' ? detail : '';
-        document.getElementById('deleteBtn').style.display = 'block';
+        const idInput = document.getElementById('calendarId');
+        idInput.disabled = false;
+        idInput.value = el.getAttribute('data-id') || '';
+        document.getElementById('title').value = el.getAttribute('data-title') || '';
+        document.getElementById('eventColor').value = el.getAttribute('data-color') || 'sky';
+        document.getElementById('startTime').value = el.getAttribute('data-start') || '';
+        document.getElementById('endTime').value = el.getAttribute('data-end') || '';
+        document.getElementById('detail').value = el.getAttribute('data-detail') || '';
+        document.getElementById('deleteBtn').style.display = 'inline-block';
         modal.show();
     }
 
     function deleteEvent() {
         const id = document.getElementById('calendarId').value;
-        if (confirm('この予定を削除しますか？')) {
+        if (id && confirm('この予定を削除しますか？')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/calendar/delete/' + id;
