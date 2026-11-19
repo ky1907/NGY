@@ -7,8 +7,12 @@
         body { font-family: sans-serif; padding: 10px; background: #f5f5f5; margin: 0; }
 
         /* ヘッダー全体 */
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding: 10px 20px; background: #fff; position: relative; margin-bottom: 15px; }
-        .filter-area { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding: 10px 20px; background: #fff; position: relative; margin-bottom: 12px; }
+        .header-title { margin: 0; font-size: 1.2em; }
+
+        /* ヘッダーと表の間の絞り込みバー */
+        .filter-bar { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; background: #fff; padding: 10px 20px; border: 1px solid #ccc; margin-bottom: 12px; }
+        .filter-item { display: flex; align-items: center; gap: 6px; font-size: 0.95em; font-weight: bold; }
 
         /* メニューボタンとサイドメニュー（水色） */
         .menu-toggle-btn { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold; }
@@ -56,24 +60,37 @@
 </head>
 <body>
 
+<!-- ヘッダー -->
 <div class="header">
-    <div class="filter-area">
-        <form th:action="@{/working_time}" method="get" style="display: flex; gap: 10px; align-items: center; margin: 0;">
-            <div>
-                <input type="month" name="yearMonth" th:value="${selectedYearMonth}" style="padding: 5px; font-size: 1em;" onchange="this.form.submit()">
-            </div>
-            <div>
-                <label>部署:</label>
-                <select name="departmentId" onchange="this.form.submit()" style="padding: 5px;">
-                    <option value="">全部署</option>
-                    <option value="D01" th:selected="${selectedDepartment == 'D01'}">開発部</option>
-                    <option value="D02" th:selected="${selectedDepartment == 'D02'}">営業部</option>
-                </select>
-            </div>
-        </form>
-    </div>
-
+    <h2 class="header-title">勤務時間参照・集計</h2>
     <button type="button" class="menu-toggle-btn" onclick="toggleMenu()">押したら開く ☰</button>
+</div>
+
+<!-- ヘッダーと表の間の選択バー（年月・部署・勤務地） -->
+<div class="filter-bar">
+    <form id="filterForm" th:action="@{/working_time}" method="get" style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin: 0;">
+        <div class="filter-item">
+            <label for="yearMonth">年月:</label>
+            <input type="month" id="yearMonth" name="yearMonth" th:value="${selectedYearMonth}" style="padding: 5px; font-size: 0.95em;" onchange="this.form.submit()">
+        </div>
+        <div class="filter-item">
+            <label for="departmentId">部署:</label>
+            <select id="departmentId" name="departmentId" onchange="this.form.submit()" style="padding: 5px; font-size: 0.95em;">
+                <option value="">全部署</option>
+                <option value="D01" th:selected="${selectedDepartment == 'D01'}">開発部</option>
+                <option value="D02" th:selected="${selectedDepartment == 'D02'}">営業部</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="workLocationId">勤務地:</label>
+            <select id="workLocationId" name="workLocationId" onchange="this.form.submit()" style="padding: 5px; font-size: 0.95em;">
+                <option value="">全勤務地</option>
+                <option value="L01" th:selected="${selectedWorkLocation == 'L01'}">愛知県</option>
+                <option value="L02" th:selected="${selectedWorkLocation == 'L02'}">東京都</option>
+                <option value="L03" th:selected="${selectedWorkLocation == 'L03'}">大阪府</option>
+            </select>
+        </div>
+    </form>
 </div>
 
 <!-- 水色のサイドメニュー -->
@@ -112,6 +129,7 @@
                       th:with="monthly=${monthlySummaryMap.get(user.userId)},
                                actualMins=${monthly != null && monthly.monthlyActualMinutes != null ? monthly.monthlyActualMinutes : 0},
                                overtimeMins=${monthly != null && monthly.monthlyOvertimeMinutes != null ? monthly.monthlyOvertimeMinutes : 0}">
+                <!-- 1行目：出勤 -->
                 <tr>
                     <td class="col-name" rowspan="4">
                         <div class="user-name-label" th:text="${user.userName}"></div>
@@ -123,15 +141,22 @@
                     <td class="col-item">出勤</td>
                     <td th:each="day : ${#numbers.sequence(1, daysInMonth)}">
                         <span th:with="dateObj=${T(java.time.LocalDate).parse(selectedYearMonth + '-' + (day < 10 ? '0' + day : day))},
-                                       rec=${userMonthlyData.get(user.userId).get(dateObj)}">
-                            <span th:if="${rec != null && rec.createdAt != null}" th:text="${#temporals.format(rec.createdAt, 'HH:mm')}"></span>
+                                       att=${userAttendanceMap.get(user.userId).get(dateObj)}">
+                            <span th:if="${att != null && att.startTime != null}" th:text="${#temporals.format(att.startTime, 'HH:mm')}"></span>
                         </span>
                     </td>
                 </tr>
+                <!-- 2行目：退勤 -->
                 <tr>
                     <td class="col-item">退勤</td>
-                    <td th:each="day : ${#numbers.sequence(1, daysInMonth)}"></td>
+                    <td th:each="day : ${#numbers.sequence(1, daysInMonth)}">
+                        <span th:with="dateObj=${T(java.time.LocalDate).parse(selectedYearMonth + '-' + (day < 10 ? '0' + day : day))},
+                                       att=${userAttendanceMap.get(user.userId).get(dateObj)}">
+                            <span th:if="${att != null && att.endTime != null}" th:text="${#temporals.format(att.endTime, 'HH:mm')}"></span>
+                        </span>
+                    </td>
                 </tr>
+                <!-- 3行目：実働 -->
                 <tr>
                     <td class="col-item">実働</td>
                     <td th:each="day : ${#numbers.sequence(1, daysInMonth)}">
@@ -142,6 +167,7 @@
                         </span>
                     </td>
                 </tr>
+                <!-- 4行目：残業 -->
                 <tr>
                     <td class="col-item">残業</td>
                     <td th:each="day : ${#numbers.sequence(1, daysInMonth)}">
