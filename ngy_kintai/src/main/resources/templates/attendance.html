@@ -4,35 +4,97 @@
     <meta charset="UTF-8">
     <title>勤怠入力画面 - 勤怠管理システム</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
-        .container { max-width: 500px; margin: 40px auto; text-align: center; }
-        .btn-group { display: flex; justify-content: space-around; margin: 20px 0; }
-        .select-btn { width: 160px; height: 60px; font-size: 1.1em; border: 2px solid #555; background: #fff; cursor: pointer; border-radius: 6px; }
+        body { font-family: sans-serif; padding: 10px 20px; background: #f9f9f9; margin: 0; }
+
+        /* ヘッダー全体 */
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding: 10px 20px; background: #fff; margin-bottom: 20px; position: relative; }
+        .user-info { font-weight: bold; }
+
+        /* メニューボタンと水色サイドメニュー */
+        .menu-toggle-btn { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold; }
+        .menu-toggle-btn:hover { background: #555; }
+
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 260px;
+            height: 100%;
+            background: #a7ffeb;
+            box-shadow: -4px 0 10px rgba(0,0,0,0.15);
+            z-index: 2000;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .side-menu.show { display: block; }
+        .side-menu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #004d40; padding-bottom: 10px; font-weight: bold; }
+        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: #333; }
+
+        .nav-links { display: flex; flex-direction: column; gap: 12px; }
+        .nav-links a { text-decoration: none; color: #004d40; font-size: 1.1em; font-weight: bold; padding: 6px 10px; border-radius: 4px; transition: background 0.2s; }
+        .nav-links a:hover { background: rgba(0,0,0,0.05); }
+        .nav-links .logout-link { color: #d32f2f; margin-top: 20px; border-top: 1px dashed #004d40; padding-top: 15px; }
+
+        /* メインカード */
+        .container { max-width: 520px; margin: 40px auto; background: #fff; padding: 30px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); text-align: center; }
+        .btn-group { display: flex; justify-content: space-around; margin: 20px 0; gap: 15px; }
+        .select-btn { flex: 1; height: 60px; font-size: 1.1em; border: 2px solid #555; background: #fff; color: #222; cursor: pointer; border-radius: 6px; transition: all 0.15s; }
+        .select-btn:hover { background: #f0f0f0; }
         .select-btn.selected { background: #555; color: #fff; font-weight: bold; }
-        .submit-btn { width: 200px; height: 50px; font-size: 1.1em; background: #1976d2; color: #fff; border: none; border-radius: 6px; cursor: pointer; margin-top: 20px; }
+
+        #workStatusArea { display: none; }
+        #workStatusArea.show { display: block; }
+
+        .submit-btn { width: 200px; height: 50px; font-size: 1.1em; background: #1976d2; color: #fff; border: none; border-radius: 6px; cursor: pointer; margin-top: 20px; font-weight: bold; }
+        .submit-btn:hover { background: #1565c0; }
     </style>
 </head>
 <body>
+
 <div class="header">
-    <div><span th:text="${loginUser.userName}"></span>さん</div>
-    <a th:href="@{/logout}"><button type="button">ログアウト</button></a>
+    <div class="user-info"><span th:text="${loginUser.userName}"></span>さん</div>
+    <button type="button" class="menu-toggle-btn" onclick="toggleMenu()">押したら開く ☰</button>
+</div>
+
+<!-- 水色のサイドメニュー -->
+<div id="sideMenu" class="side-menu">
+    <div class="side-menu-header">
+        <span>メニュー</span>
+        <button type="button" class="close-btn" onclick="toggleMenu()">×</button>
+    </div>
+    <div class="nav-links">
+        <a th:href="@{/attendance}">勤怠登録</a>
+        <a th:href="@{/calendar}">カレンダー</a>
+        <a th:href="@{/mail}">メール</a>
+        <a th:href="@{/working_status}">部署内勤務状況</a>
+        <th:block th:if="${session.loginUser != null && session.loginUser.roleId == 'R01'}">
+            <a th:href="@{/user_edit}">ユーザ登録 <span style="font-size:0.8em; color:#555;">(管理者のみ)</span></a>
+            <a th:href="@{/working_time}">勤務時間参照 <span style="font-size:0.8em; color:#555;">(管理者のみ)</span></a>
+        </th:block>
+        <a th:href="@{/logout}" class="logout-link">ログアウト</a>
+    </div>
 </div>
 
 <div class="container">
-    <h2>勤怠入力</h2>
+    <h2>勤怠登録</h2>
     <form th:action="@{/attendance}" method="post" onsubmit="return validateSelection()">
-        <input type="hidden" id="attendanceType" name="attendanceType" required>
-        <input type="hidden" id="workStatusId" name="workStatusId" required>
+        <input type="hidden" id="attendanceType" name="attendanceType">
+        <input type="hidden" id="workStatusId" name="workStatusId">
 
+        <!-- 出勤 / 退勤 選択 -->
         <div class="btn-group">
             <button type="button" class="select-btn type-btn" onclick="selectType('0', this)">出勤</button>
             <button type="button" class="select-btn type-btn" onclick="selectType('1', this)">退勤</button>
         </div>
 
-        <div class="btn-group">
-            <button type="button" class="select-btn status-btn" onclick="selectStatus('W01', this)">出社</button>
-            <button type="button" class="select-btn status-btn" onclick="selectStatus('W02', this)">在宅</button>
+        <!-- 出社 / 在宅 選択（出勤時のみ表示） -->
+        <div id="workStatusArea">
+            <div class="btn-group">
+                <button type="button" class="select-btn status-btn" onclick="selectStatus('W01', this)">出社</button>
+                <button type="button" class="select-btn status-btn" onclick="selectStatus('W02', this)">在宅</button>
+            </div>
         </div>
 
         <button type="submit" class="submit-btn">決定</button>
@@ -40,19 +102,44 @@
 </div>
 
 <script>
+    function toggleMenu() {
+        document.getElementById('sideMenu').classList.toggle('show');
+    }
+
     function selectType(val, btn) {
         document.getElementById('attendanceType').value = val;
         document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
+
+        const statusArea = document.getElementById('workStatusArea');
+        if (val === '0') {
+            // 出勤時のみ出社・在宅エリアを表示
+            statusArea.classList.add('show');
+        } else {
+            // 退勤時は出社・在宅エリアを隠し、選択値をクリア
+            statusArea.classList.remove('show');
+            document.getElementById('workStatusId').value = '';
+            document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
+        }
     }
+
     function selectStatus(val, btn) {
         document.getElementById('workStatusId').value = val;
         document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
     }
+
     function validateSelection() {
-        if (!document.getElementById('attendanceType').value || !document.getElementById('workStatusId').value) {
-            alert('「出勤/退勤」と「出社/在宅」をそれぞれ選択してください。');
+        const typeVal = document.getElementById('attendanceType').value;
+        const statusVal = document.getElementById('workStatusId').value;
+
+        if (!typeVal) {
+            alert('「出勤」または「退勤」を選択してください。');
+            return false;
+        }
+        // 出勤（'0'）のときだけ出社・在宅の選択をチェック
+        if (typeVal === '0' && !statusVal) {
+            alert('出勤時は「出社」または「在宅」を選択してください。');
             return false;
         }
         return true;

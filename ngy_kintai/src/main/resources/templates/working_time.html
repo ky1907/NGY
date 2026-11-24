@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>勤務時間参照・集計画面 - 勤怠管理システム</title>
+    <style>
+        body { font-family: sans-serif; padding: 10px; background: #f5f5f5; margin: 0; }
+
+        /* ヘッダー全体 */
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding: 10px 20px; background: #fff; position: relative; margin-bottom: 12px; }
+        .header-title { margin: 0; font-size: 1.2em; }
+
+        /* ヘッダーと表の間の絞り込みバー */
+        .filter-bar { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; background: #fff; padding: 10px 20px; border: 1px solid #ccc; margin-bottom: 12px; }
+        .filter-item { display: flex; align-items: center; gap: 6px; font-size: 0.95em; font-weight: bold; }
+
+        /* メニューボタンとサイドメニュー（水色） */
+        .menu-toggle-btn { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold; }
+        .menu-toggle-btn:hover { background: #555; }
+
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 260px;
+            height: 100%;
+            background: #a7ffeb;
+            box-shadow: -4px 0 10px rgba(0,0,0,0.15);
+            z-index: 2000;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .side-menu.show { display: block; }
+        .side-menu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #004d40; padding-bottom: 10px; font-weight: bold; }
+        .close-btn { background: none; border: none; font-size: 1.5em; cursor: pointer; color: #333; }
+
+        .nav-links { display: flex; flex-direction: column; gap: 12px; }
+        .nav-links a { text-decoration: none; color: #004d40; font-size: 1.1em; font-weight: bold; padding: 6px 10px; border-radius: 4px; transition: background 0.2s; }
+        .nav-links a:hover { background: rgba(0,0,0,0.05); }
+        .nav-links .logout-link { color: #d32f2f; margin-top: 20px; border-top: 1px dashed #004d40; padding-top: 15px; }
+
+        /* テーブルコンテナ（横スクロール対応） */
+        .table-container { width: 100%; overflow-x: auto; background: #fff; border: 1px solid #ccc; }
+        table { border-collapse: collapse; white-space: nowrap; width: max-content; }
+        th, td { border: 1px solid #bbb; padding: 6px 10px; text-align: center; font-size: 0.9em; }
+        th { background: #e0e0e0; color: #000; position: sticky; top: 0; z-index: 10; }
+
+        /* 固定列のスタイリング */
+        .col-name { position: sticky; left: 0; background: #eaeaea; z-index: 5; min-width: 145px; font-weight: bold; text-align: left; vertical-align: top; }
+        .col-item { position: sticky; left: 145px; background: #f2f2f2; z-index: 5; min-width: 80px; font-weight: bold; }
+
+        th.col-name { z-index: 15; }
+        th.col-item { z-index: 15; }
+
+        .user-name-label { font-size: 1.05em; margin-bottom: 10px; }
+        .total-box { font-size: 0.85em; font-weight: normal; color: #222; line-height: 1.6; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+    <h2 class="header-title">勤務時間参照・集計</h2>
+    <button type="button" class="menu-toggle-btn" onclick="toggleMenu()">押したら開く ☰</button>
+</div>
+
+<!-- ヘッダーと表の間の選択バー（年月・部署・勤務地） -->
+<div class="filter-bar">
+    <form id="filterForm" th:action="@{/working_time}" method="get" style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin: 0;">
+        <div class="filter-item">
+            <label for="yearMonth">年月:</label>
+            <input type="month" id="yearMonth" name="yearMonth" th:value="${selectedYearMonth}" style="padding: 5px; font-size: 0.95em;" onchange="this.form.submit()">
+        </div>
+        <div class="filter-item">
+            <label for="departmentId">部署:</label>
+            <select id="departmentId" name="departmentId" onchange="this.form.submit()" style="padding: 5px; font-size: 0.95em;">
+                <option value="">全部署</option>
+                <option value="D01" th:selected="${selectedDepartment == 'D01'}">開発部</option>
+                <option value="D02" th:selected="${selectedDepartment == 'D02'}">営業部</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label for="workLocationId">勤務地:</label>
+            <select id="workLocationId" name="workLocationId" onchange="this.form.submit()" style="padding: 5px; font-size: 0.95em;">
+                <option value="">全勤務地</option>
+                <option value="L01" th:selected="${selectedWorkLocation == 'L01'}">愛知県</option>
+                <option value="L02" th:selected="${selectedWorkLocation == 'L02'}">東京都</option>
+                <option value="L03" th:selected="${selectedWorkLocation == 'L03'}">大阪府</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<!-- 水色のサイドメニュー -->
+<div id="sideMenu" class="side-menu">
+    <div class="side-menu-header">
+        <span>メニュー</span>
+        <button type="button" class="close-btn" onclick="toggleMenu()">×</button>
+    </div>
+    <div class="nav-links">
+        <a th:href="@{/attendance}">勤怠登録</a>
+        <a th:href="@{/calendar}">カレンダー</a>
+        <a th:href="@{/mail}">メール</a>
+        <a th:href="@{/working_status}">部署内勤務状況</a>
+        <th:block th:if="${session.loginUser != null && session.loginUser.roleId == 'R01'}">
+            <a th:href="@{/user_edit}">ユーザ登録 <span style="font-size:0.8em; color:#555;">(管理者のみ)</span></a>
+            <a th:href="@{/working_time}">勤務時間参照 <span style="font-size:0.8em; color:#555;">(管理者のみ)</span></a>
+        </th:block>
+        <a th:href="@{/logout}" class="logout-link">ログアウト</a>
+    </div>
+</div>
+
+<!-- マトリクス表本体 -->
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th class="col-name">名前</th>
+                <th class="col-item">項目</th>
+                <th th:each="day : ${#numbers.sequence(1, daysInMonth)}">
+                    <span th:text="${day}"></span>日
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <th:block th:each="user : ${userList}"
+                      th:with="monthly=${monthlySummaryMap.get(user.userId)},
+                               actualMins=${monthly != null && monthly.monthlyActualMinutes != null ? monthly.monthlyActualMinutes : 0},
+                               overtimeMins=${monthly != null && monthly.monthlyOvertimeMinutes != null ? monthly.monthlyOvertimeMinutes : 0}">
+                <!-- 1行目：出勤 -->
+                <tr>
+                    <td class="col-name" rowspan="4">
+                        <div class="user-name-label" th:text="${user.userName}"></div>
+                        <div class="total-box">
+                            <div>実働合計: <strong th:text="${(actualMins / 60) + ':' + #numbers.formatInteger(actualMins % 60, 2)}">0:00</strong></div>
+                            <div>残業合計: <strong th:text="${(overtimeMins / 60) + ':' + #numbers.formatInteger(overtimeMins % 60, 2)}">0:00</strong></div>
+                        </div>
+                    </td>
+                    <td class="col-item">出勤</td>
+                    <td th:each="day : ${#numbers.sequence(1, daysInMonth)}">
+                        <span th:with="dateObj=${T(java.time.LocalDate).parse(selectedYearMonth + '-' + (day < 10 ? '0' + day : day))},
+                                       att=${userAttendanceMap.get(user.userId).get(dateObj)}">
+                            <span th:if="${att != null && att.startTime != null}" th:text="${#temporals.format(att.startTime, 'HH:mm')}"></span>
+                        </span>
+                    </td>
+                </tr>
+                <!-- 2行目：退勤 -->
+                <tr>
+                    <td class="col-item">退勤</td>
+                    <td th:each="day : ${#numbers.sequence(1, daysInMonth)}">
+                        <span th:with="dateObj=${T(java.time.LocalDate).parse(selectedYearMonth + '-' + (day < 10 ? '0' + day : day))},
+                                       att=${userAttendanceMap.get(user.userId).get(dateObj)}">
+                            <span th:if="${att != null && att.endTime != null}" th:text="${#temporals.format(att.endTime, 'HH:mm')}"></span>
+                        </span>
+                    </td>
+                </tr>
+                <!-- 3行目：実働 -->
+                <tr>
+                    <td class="col-item">実働</td>
+                    <td th:each="day : ${#numbers.sequence(1, daysInMonth)}">
+                        <span th:with="dateObj=${T(java.time.LocalDate).parse(selectedYearMonth + '-' + (day < 10 ? '0' + day : day))},
+                                       rec=${userMonthlyData.get(user.userId).get(dateObj)}">
+                            <span th:if="${rec != null && rec.actualWorkMinutes != null}"
+                                  th:text="${(rec.actualWorkMinutes / 60) + ':' + #numbers.formatInteger(rec.actualWorkMinutes % 60, 2)}"></span>
+                        </span>
+                    </td>
+                </tr>
+                <!-- 4行目：残業 -->
+                <tr>
+                    <td class="col-item">残業</td>
+                    <td th:each="day : ${#numbers.sequence(1, daysInMonth)}">
+                        <span th:with="dateObj=${T(java.time.LocalDate).parse(selectedYearMonth + '-' + (day < 10 ? '0' + day : day))},
+                                       rec=${userMonthlyData.get(user.userId).get(dateObj)}">
+                            <span th:if="${rec != null && rec.overtimeMinutes != null && rec.overtimeMinutes > 0}"
+                                  th:text="${(rec.overtimeMinutes / 60) + ':' + #numbers.formatInteger(rec.overtimeMinutes % 60, 2)}"></span>
+                        </span>
+                    </td>
+                </tr>
+            </th:block>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleMenu() {
+        document.getElementById('sideMenu').classList.toggle('show');
+    }
+</script>
+
+</body>
+</html>

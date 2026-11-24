@@ -1,3 +1,17 @@
+-- 既存カレンダーの削除
+DROP TABLE IF EXISTS calender;
+
+-- 8. カレンダー機能テーブル (calendar) ※スペル修正
+CREATE TABLE calendar (
+    calendar_id SERIAL PRIMARY KEY,
+    user_id VARCHAR(8) REFERENCES users(user_id),
+    title VARCHAR(32) NOT NULL,
+    detail VARCHAR(256),
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP
+);
+
+
 CREATE DATABASE ngy_kintai;
 
 -- 1. 役割管理テーブル (role)
