@@ -18,15 +18,17 @@ public class user_editController {
     private user_Repository userRepository;
 
     // 管理者権限チェック（ログイン中の user_Entity の roleId を直接参照）
-    private boolean isAdmin(HttpSession session) {
-        user_Entity loginUser = (user_Entity) session.getAttribute("loginUser");
+    private boolean isAdmin(user_Entity loginUser) {
         return loginUser != null && "R01".equals(loginUser.getRoleId());
     }
 
     // ユーザ管理・登録画面（S0108）表示
     @GetMapping("/user_edit")
     public String showUserEdit(HttpSession session, Model model) {
-        if (!isAdmin(session)) return "redirect:/login";
+        user_Entity loginUser = (user_Entity) session.getAttribute("loginUser");
+        if (!isAdmin(loginUser)) return "redirect:/login";
+
+        model.addAttribute("loginUser", loginUser);
 
         List<user_Entity> userList = userRepository.findAll();
         model.addAttribute("userList", userList);
@@ -38,7 +40,8 @@ public class user_editController {
     // ユーザ登録・更新処理
     @PostMapping("/user_edit/save")
     public String saveUser(@ModelAttribute("userForm") user_Entity form, HttpSession session) {
-        if (!isAdmin(session)) return "redirect:/login";
+        user_Entity loginUser = (user_Entity) session.getAttribute("loginUser");
+        if (!isAdmin(loginUser)) return "redirect:/login";
 
         LocalDateTime now = LocalDateTime.now();
         user_Entity existing = userRepository.findById(form.getUserId()).orElse(null);
@@ -69,7 +72,8 @@ public class user_editController {
     // ユーザ削除処理
     @PostMapping("/user_edit/delete")
     public String deleteUser(@RequestParam("userId") String userId, HttpSession session) {
-        if (!isAdmin(session)) return "redirect:/login";
+        user_Entity loginUser = (user_Entity) session.getAttribute("loginUser");
+        if (!isAdmin(loginUser)) return "redirect:/login";
         userRepository.deleteById(userId);
         return "redirect:/user_edit";
     }
