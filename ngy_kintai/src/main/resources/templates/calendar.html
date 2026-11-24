@@ -1,19 +1,38 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
 <head>
     <meta charset="UTF-8">
     <title>個人カレンダー (S0103)</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 共通メニューCSS -->
+    <th:block th:replace="~{common :: menuStyle}"></th:block>
     <style>
-        .calendar-table { table-layout: fixed; }
-        .calendar-day {
-            height: 125px;
-            vertical-align: top;
-            padding: 6px 2px;
+        .calendar-grid-wrapper {
+            position: relative;
         }
-        .day-header {
-            padding: 0 4px;
+        .cal-week-row {
+            position: relative;
+            min-height: 125px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .cal-week-row:last-child {
+            border-bottom: none;
+        }
+        .cal-week-bg {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+        .cal-day-bg {
+            border-right: 1px solid #dee2e6;
+            padding: 6px 8px;
+            height: 100%;
+        }
+        .cal-day-bg:last-child {
+            border-right: none;
         }
         .other-month {
             background-color: #f8f9fa;
@@ -22,65 +41,55 @@
         .today-cell {
             background-color: #fff9db;
         }
-        .event-bar {
-            font-size: 0.78rem;
+        .cal-day-headers {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            pointer-events: none;
+        }
+        .cal-day-header {
+            padding: 6px 8px 0 8px;
+        }
+        .cal-week-bars {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            padding-top: 32px;
+            padding-bottom: 8px;
+            row-gap: 4px;
+        }
+        .cal-event-bar {
+            font-size: 0.8rem;
             cursor: pointer;
-            display: block;
-            margin-top: 3px;
-            padding: 2px 6px;
+            margin: 0 2px;
+            padding: 3px 8px;
+            border-radius: 5px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            border-radius: 4px;
             font-weight: 500;
-        }
-        /* 複数日予定の継続セルは横につなげる */
-        .event-bar.event-cont {
-            margin-left: -3px;
-            margin-right: -3px;
-            border-radius: 0;
-        }
-        .event-bar.event-start {
-            margin-left: 2px;
-            border-top-left-radius: 4px;
-            border-bottom-left-radius: 4px;
-        }
-        .event-bar.event-end {
-            margin-right: 2px;
-            border-top-right-radius: 4px;
-            border-bottom-right-radius: 4px;
+            line-height: 1.45;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
         }
 
         /* 予定カラーバリエーション */
-        .color-sky    { background-color: #cfe2ff; color: #084298; border-left: 3px solid #0d6efd; }
-        .color-blue   { background-color: #9ec5fe; color: #052c65; border-left: 3px solid #0a58ca; }
-        .color-green  { background-color: #d1e7dd; color: #0f5132; border-left: 3px solid #198754; }
-        .color-amber  { background-color: #fff3cd; color: #664d03; border-left: 3px solid #ffc107; }
-        .color-rose   { background-color: #f8d7da; color: #842029; border-left: 3px solid #dc3545; }
-        .color-purple { background-color: #e2d9f3; color: #3d1e73; border-left: 3px solid #6f42c1; }
-
-        .user-info-bar {
-            font-size: 0.9rem;
-        }
+        .color-sky    { background-color: #cfe2ff; color: #084298; border-left: 4px solid #0d6efd; }
+        .color-blue   { background-color: #9ec5fe; color: #052c65; border-left: 4px solid #0a58ca; }
+        .color-green  { background-color: #d1e7dd; color: #0f5132; border-left: 4px solid #198754; }
+        .color-amber  { background-color: #fff3cd; color: #664d03; border-left: 4px solid #ffc107; }
+        .color-rose   { background-color: #f8d7da; color: #842029; border-left: 4px solid #dc3545; }
+        .color-purple { background-color: #e2d9f3; color: #3d1e73; border-left: 4px solid #6f42c1; }
     </style>
 </head>
 <body class="bg-light">
 
 <div class="container mt-3 mb-5">
-    <!-- 左上：ユーザーID・名前表示 -->
-    <div class="d-flex justify-content-start align-items-center mb-2 user-info-bar">
-        <div class="bg-white border rounded px-3 py-1 shadow-sm d-inline-flex align-items-center gap-2">
-            <span class="text-muted">ユーザーID:</span>
-            <span class="fw-semibold" th:text="${loginUserId}"></span>
-            <span class="text-muted mx-1">|</span>
-            <span class="text-muted">氏名:</span>
-            <span class="fw-semibold" th:text="${loginUserName}"></span>
-        </div>
-    </div>
-
-    <!-- 画面タイトル -->
-    <div class="mb-3">
-        <h2>個人カレンダー</h2>
+    <!-- 上部ヘッダー：左にタイトル、右上に三本線メニューボタン -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">個人カレンダー</h2>
+        <div th:replace="~{common :: hamburgerBtn}"></div>
     </div>
 
     <!-- 操作バー：左側に「+ 予定を追加」、中央に「前月・年月・次月」 -->
@@ -101,61 +110,55 @@
 
     <!-- 月間カレンダー本体 -->
     <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <table class="table table-bordered calendar-table mb-0">
-                <thead class="table-light text-center">
-                    <tr>
-                        <th class="text-danger">日</th>
-                        <th>月</th>
-                        <th>火</th>
-                        <th>水</th>
-                        <th>木</th>
-                        <th>金</th>
-                        <th class="text-primary">土</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="week : ${calendarWeeks}">
-                        <td th:each="day : ${week}"
-                            class="calendar-day"
-                            th:classappend="${day.monthValue != currentMonth ? 'other-month' : ''} + (${day.equals(today)} ? ' today-cell' : '')">
-                            <div class="d-flex justify-content-between align-items-center day-header">
-                                <span class="fw-bold"
-                                      th:classappend="${day.dayOfWeek.value == 7} ? 'text-danger' : (${day.dayOfWeek.value == 6} ? 'text-primary' : '')"
-                                      th:text="${day.dayOfMonth}">1</span>
-                                <span th:if="${day.equals(today)}" class="badge bg-warning text-dark" style="font-size: 0.65rem;">今日</span>
-                            </div>
+        <div class="card-body p-0 calendar-grid-wrapper">
+            <!-- 曜日ヘッダー -->
+            <div class="row g-0 border-bottom bg-light text-center fw-bold py-2">
+                <div class="col text-danger">日</div>
+                <div class="col">月</div>
+                <div class="col">火</div>
+                <div class="col">水</div>
+                <div class="col">木</div>
+                <div class="col">金</div>
+                <div class="col text-primary">土</div>
+            </div>
 
-                            <!-- 該当日の予定（開始日〜終了日まで各セルに横棒表示） -->
-                            <th:block th:each="ev : ${events}">
-                                <th:block th:if="${ev.startTime != null}"
-                                          th:with="startD=${ev.startTime.toLocalDate()},
-                                                   endD=${(ev.endTime != null and !ev.endTime.toLocalDate().isBefore(startD)) ? ev.endTime.toLocalDate() : startD},
-                                                   rawD=${ev.detail != null ? ev.detail : ''},
-                                                   hasTag=${#strings.startsWith(rawD, '[color:') and #strings.contains(rawD, ']')},
-                                                   evColor=${hasTag ? #strings.substring(rawD, 7, #strings.indexOf(rawD, ']')) : 'sky'},
-                                                   cleanD=${hasTag ? #strings.substring(rawD, #strings.indexOf(rawD, ']') + 1) : rawD},
-                                                   isStart=${day.equals(startD)},
-                                                   isEnd=${day.equals(endD)},
-                                                   isMulti=${!startD.equals(endD)}">
-                                    <div th:if="${!day.isBefore(startD) and !day.isAfter(endD)}"
-                                         class="event-bar"
-                                         th:classappend="${'color-' + evColor} + (${isMulti and !isStart} ? ' event-cont' : '') + (${isMulti and isStart} ? ' event-start' : '') + (${isMulti and isEnd} ? ' event-end' : '')"
-                                         th:text="${isStart ? (#temporals.format(ev.startTime, 'HH:mm') + ' ' + ev.title) : ((day.dayOfWeek.value == 1) ? ev.title : ' ')}"
-                                         th:attr="data-id=${ev.calendarId},
-                                                  data-title=${ev.title},
-                                                  data-start=${#temporals.format(ev.startTime, 'yyyy-MM-dd''T''HH:mm')},
-                                                  data-end=${ev.endTime != null ? #temporals.format(ev.endTime, 'yyyy-MM-dd''T''HH:mm') : ''},
-                                                  data-detail=${cleanD},
-                                                  data-color=${evColor}"
-                                         onclick="openEditModalFromEl(this)">
-                                    </div>
-                                </th:block>
-                            </th:block>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- 週ごとの行 -->
+            <div th:each="weekRow : ${weekRows}" class="cal-week-row">
+                <!-- 背景の7日分マス目 -->
+                <div class="cal-week-bg">
+                    <div th:each="day : ${weekRow.days}"
+                         class="cal-day-bg"
+                         th:classappend="${day.monthValue != currentMonth ? 'other-month' : ''} + (${day.equals(today)} ? ' today-cell' : '')">
+                    </div>
+                </div>
+
+                <!-- 各日の日付数字・「今日」バッジ -->
+                <div class="cal-day-headers">
+                    <div th:each="day : ${weekRow.days}" class="cal-day-header d-flex justify-content-between align-items-center">
+                        <span class="fw-bold"
+                              th:classappend="${day.dayOfWeek.value == 7} ? 'text-danger' : (${day.dayOfWeek.value == 6} ? 'text-primary' : '')"
+                              th:text="${day.dayOfMonth}">1</span>
+                        <span th:if="${day.equals(today)}" class="badge bg-warning text-dark" style="font-size: 0.65rem;">今日</span>
+                    </div>
+                </div>
+
+                <!-- 貫通する横棒エリア -->
+                <div class="cal-week-bars">
+                    <div th:each="bar : ${weekRow.bars}"
+                         class="cal-event-bar"
+                         th:classappend="${'color-' + bar.color}"
+                         th:style="'grid-column: ' + ${bar.startCol} + ' / span ' + ${bar.spanCols} + ';'"
+                         th:text="${bar.label}"
+                         th:attr="data-id=${bar.calendarId},
+                                  data-title=${bar.title},
+                                  data-start=${bar.startTimeInput},
+                                  data-end=${bar.endTimeInput},
+                                  data-detail=${bar.detail},
+                                  data-color=${bar.color}"
+                         onclick="openEditModalFromEl(this)">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -213,6 +216,9 @@
         </div>
     </div>
 </div>
+
+<!-- 共通スライドメニュー本体 -->
+<th:block th:replace="~{common :: sideMenu}"></th:block>
 
 <!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
