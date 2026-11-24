@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>連絡先登録 - 勤怠管理システム</title>
+    <!-- 共通メニューCSSを呼び出し -->
+    <th:block th:replace="~{common :: menuStyle}"></th:block>
+    <style>
+        .top-bar {
+            margin-bottom: 30px;
+        }
+        .form-card {
+            background-color: #d9d9d9;
+            width: 82%;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 45px 60px 60px;
+            min-height: 430px;
+        }
+        .form-title {
+            font-size: 2.1em;
+            font-weight: normal;
+            margin: 0 0 40px 0;
+        }
+        .error-msg {
+            color: #ff0000;
+            font-size: 1.05em;
+            margin-left: 202px;
+            margin-bottom: 10px;
+            min-height: 1.3em;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+        .form-row label {
+            width: 190px;
+            text-align: right;
+            font-size: 1.25em;
+            padding-right: 12px;
+            white-space: nowrap;
+        }
+        .req-star {
+            color: #ff0000;
+        }
+        .form-row input {
+            width: 310px;
+            height: 44px;
+            background-color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0 14px;
+            font-size: 1.1em;
+            color: #000;
+        }
+        .form-row input::placeholder {
+            color: #999999;
+        }
+        .button-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+            padding-right: 55px;
+            margin-top: 25px;
+        }
+        .complete-msg {
+            color: #ff0000;
+            font-size: 1.1em;
+        }
+        .submit-btn {
+            background-color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 42px;
+            font-size: 1.3em;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <div class="top-bar">
+        <div class="user-info">
+            <span th:text="${loginUser.userId}">ユーザID</span>
+            <span th:text="${loginUser.userName}">名前</span>
+        </div>
+        <!-- 共通三本線ボタンを呼び出し -->
+        <button th:replace="~{common :: hamburgerBtn}"></button>
+    </div>
+
+    <div class="form-card">
+        <h1 class="form-title">連絡先登録</h1>
+
+        <form id="contactForm" th:action="@{/contact_add}" method="post" novalidate>
+            <!-- 電話番号入力欄の直上に表示する赤字エラー -->
+            <div id="errorMsg" class="error-msg" th:text="${errorMessage != null ? errorMessage : ''}"></div>
+
+            <div class="form-row">
+                <label for="phoneNumber">電話番号<span class="req-star">＊</span>：</label>
+                <input type="text" id="phoneNumber" name="phoneNumber"
+                       th:value="${loginUser.phoneNumber}" placeholder="ハイフンなし">
+            </div>
+
+            <div class="form-row">
+                <label for="emailAddress">メールアドレス<span class="req-star">＊</span>：</label>
+                <input type="text" id="emailAddress" name="emailAddress"
+                       th:value="${loginUser.emailAddress}" maxlength="128">
+            </div>
+
+            <div class="button-row">
+                <!-- 登録ボタンの左側に表示する赤字完了メッセージ -->
+                <span id="completeMsg" class="complete-msg"
+                      th:text="${completeMessage != null ? completeMessage : ''}"></span>
+                <button type="submit" class="submit-btn">登録</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 共通水色スライドメニューを呼び出し -->
+<th:block th:replace="~{common :: sideMenu}"></th:block>
+
+<script>
+    document.getElementById('contactForm').addEventListener('submit', function (e) {
+        const phone = document.getElementById('phoneNumber').value.trim();
+        const email = document.getElementById('emailAddress').value.trim();
+        const errorEl = document.getElementById('errorMsg');
+        const completeEl = document.getElementById('completeMsg');
+
+        // 電話番号：必須、半角数字のみ（ハイフン不可）
+        const phoneValid = /^[0-9]{8,15}$/.test(phone);
+        // メールアドレス：必須、半角英数字・記号、1〜128文字
+        const emailValid = /^[!-~]{1,128}$/.test(email);
+
+        if (!phone || !email || !phoneValid || !emailValid) {
+            e.preventDefault();
+            if (completeEl) completeEl.textContent = '';
+            errorEl.textContent = '電話番号またはメールアドレスに誤りがあります';
+        } else {
+            errorEl.textContent = '';
+        }
+    });
+</script>
+</body>
+</html>
