@@ -63,7 +63,8 @@
 <!-- ヘッダー -->
 <div class="header">
     <h2 class="header-title">勤務時間参照・集計</h2>
-    <button type="button" class="menu-toggle-btn" onclick="toggleMenu()">押したら開く ☰</button>
+    <!-- 共通メニューCSSを呼び出し -->
+    <th:block th:replace="~{common :: menuStyle}"></th:block>
 </div>
 
 <!-- ヘッダーと表の間の選択バー（年月・部署・勤務地） -->
@@ -91,25 +92,6 @@
             </select>
         </div>
     </form>
-</div>
-
-<!-- 水色のサイドメニュー -->
-<div id="sideMenu" class="side-menu">
-    <div class="side-menu-header">
-        <span>メニュー</span>
-        <button type="button" class="close-btn" onclick="toggleMenu()">×</button>
-    </div>
-    <div class="nav-links">
-        <a th:href="@{/attendance}">勤怠登録</a>
-        <a th:href="@{/calendar}">カレンダー</a>
-        <a th:href="@{/mail}">メール</a>
-        <a th:href="@{/working_status}">部署内勤務状況</a>
-        <th:block th:if="${session.loginUser != null && session.loginUser.roleId == 'R01'}">
-            <a th:href="@{/user_edit}">ユーザ登録 <span style="font-size:0.8em; color:#555;">(管理者のみ)</span></a>
-            <a th:href="@{/working_time}">勤務時間参照 <span style="font-size:0.8em; color:#555;">(管理者のみ)</span></a>
-        </th:block>
-        <a th:href="@{/logout}" class="logout-link">ログアウト</a>
-    </div>
 </div>
 
 <!-- マトリクス表本体 -->
@@ -182,6 +164,9 @@
         </tbody>
     </table>
 </div>
+
+<!-- 共通水色スライドメニューを呼び出し -->
+<th:block th:replace="~{common :: sideMenu}"></th:block>
 
 <script>
     function toggleMenu() {
