@@ -5,9 +5,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
+
 @Repository
 public interface user_Repository extends JpaRepository<user_Entity, String> {
     user_Entity findByUserIdAndPassword(String userId, String password);
     List<user_Entity> findByDepartmentIdOrderByUserNameAsc(String departmentId);
     List<user_Entity> findByUserNameContaining(String userName);
+
+    List<user_Entity> findAllByOrderByUserIdAsc();
+    List<user_Entity> findByUserNameContainingOrderByUserIdAsc(String userName);
 }
