@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>部署内勤務状況 - 勤怠管理システム</title>
+    <!-- 共通メニューCSSを呼び出し -->
+    <th:block th:replace="~{common :: menuStyle}"></th:block>
+    <style>
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px 30px 30px;
+        }
+        /* 上部ヘッダー（左：ユーザID・名前、中央：部署内勤務状況、右：三本線ボタン） */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            position: relative;
+        }
+        .user-info {
+            display: flex;
+            gap: 35px;
+            font-size: 1.2em;
+            z-index: 1;
+        }
+        .page-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.6em;
+            font-weight: normal;
+            margin: 0;
+        }
+        /* 絞り込みプルダウンエリア */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-left: 12%;
+            margin-bottom: 16px;
+        }
+        .filter-select {
+            background-color: #d9d9d9;
+            border: none;
+            padding: 8px 18px;
+            font-size: 1.2em;
+            color: #000;
+            cursor: pointer;
+            min-width: 220px;
+        }
+        .filter-select:focus {
+            outline: 2px solid #888;
+        }
+        /* 画面全体を使うグレーのテーブルコンテナ */
+        .table-wrapper {
+            background-color: #d9d9d9;
+            width: 100%;
+            flex: 1;
+            min-height: calc(100vh - 155px);
+            display: flex;
+            flex-direction: column;
+        }
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            flex: 1;
+        }
+        .status-table thead th {
+            text-align: left;
+            font-weight: normal;
+            font-size: 1.25em;
+            padding: 12px 16px;
+            border-bottom: 2px solid #000;
+            border-right: 2px solid #000;
+            height: 52px;
+        }
+        .status-table thead th:last-child {
+            border-right: none;
+        }
+        /* 各列の幅バランス */
+        .col-name { width: 17%; }
+        .col-status { width: 18%; }
+        .col-location { width: 18%; }
+        .col-phone { width: 22%; }
+        .col-email { width: 25%; }
+
+        .status-table tbody td {
+            vertical-align: top;
+            font-size: 1.2em;
+            padding: 16px;
+            border-right: 2px solid #000;
+            word-break: break-all;
+            height: 48px;
+        }
+        .status-table tbody td:last-child {
+            border-right: none;
+        }
+        /* テーブル下部まで縦線を伸ばすための余白行 */
+        .status-table tbody tr.filler-row td {
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <!-- 上部ヘッダー -->
+    <div class="top-bar">
+        <div class="user-info">
+            <span th:text="${loginUser.userId}">ユーザID</span>
+            <span th:text="${loginUser.userName}">名前</span>
+        </div>
+        <h1 class="page-title">部署内勤務状況</h1>
+        <button th:replace="~{common :: hamburgerBtn}"></button>
+    </div>
+
+    <!-- 選択式絞り込みフォーム -->
+    <form id="filterForm" th:action="@{/working_status}" method="get" class="filter-bar">
+        <!-- 出社・在宅・勤務外 選択プルダウン -->
+        <select name="workStatusId" class="filter-select" onchange="this.form.submit()">
+            <option value="" th:selected="${selectedStatusId == null or selectedStatusId == ''}">出社・在宅・勤務外</option>
+            <option th:each="st : ${statusMasterList}"
+                    th:value="${st.workStatusId}"
+                    th:text="${st.workStatusName}"
+                    th:selected="${st.workStatusId == selectedStatusId}">
+            </option>
+        </select>
+
+        <!-- 勤務場所を選ぶ プルダウン -->
+        <select name="workLocationId" class="filter-select" onchange="this.form.submit()">
+            <option value="" th:selected="${selectedLocationId == null or selectedLocationId == ''}">勤務場所を選ぶ</option>
+            <option th:each="loc : ${locationMasterList}"
+                    th:value="${loc.workLocationId}"
+                    th:text="${loc.workLocationName}"
+                    th:selected="${loc.workLocationId == selectedLocationId}">
+            </option>
+        </select>
+    </form>
+
+    <!-- 画面下端まで広がる一覧テーブル -->
+    <div class="table-wrapper">
+        <table class="status-table">
+            <thead>
+                <tr>
+                    <th class="col-name">名前</th>
+                    <th class="col-status">勤怠状況</th>
+                    <th class="col-location">勤務場所</th>
+                    <th class="col-phone">電話番号</th>
+                    <th class="col-email">メールアドレス</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="row : ${statusList}">
+                    <td th:text="${row.userName}">名前</td>
+                    <td th:text="${row.workStatusName}">勤怠状況</td>
+                    <td th:text="${row.workLocationName}">勤務場所</td>
+                    <td th:text="${row.phoneNumber}">電話番号</td>
+                    <td th:text="${row.emailAddress}">メールアドレス</td>
+                </tr>
+                <!-- データが少ない場合でも画面下まで縦罫線を伸ばすための行 -->
+                <tr class="filler-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 共通水色スライドメニューを呼び出し -->
+<th:block th:replace="~{common :: sideMenu}"></th:block>
+
+</body>
+</html>
