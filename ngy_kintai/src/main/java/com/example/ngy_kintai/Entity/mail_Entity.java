@@ -8,21 +8,22 @@ import java.time.LocalDateTime;
 @Table(name = "massege")
 @Data
 public class mail_Entity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "mail_id")
-    private Long mailId;
+    private Integer mailId;
 
-    @Column(name = "sender_user_id")
+    @Column(name = "sender_user_id", length = 8, nullable = false)
     private String senderUserId;
 
-    @Column(name = "receiver_user_id")
+    @Column(name = "receiver_user_id", length = 8, nullable = false)
     private String receiverUserId;
 
-    @Column(name = "subject")
+    @Column(name = "subject", length = 32, nullable = false)
     private String subject;
 
-    @Column(name = "body")
+    @Column(name = "body", length = 256, nullable = false)
     private String body;
 
     @Column(name = "sent_at")

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>メール - 勤怠管理システム</title>
+    <!-- 最新の共通メニューCSSを呼び出し -->
+    <th:block th:replace="~{common :: menuStyle}"></th:block>
+    <style>
+        .mail-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            max-width: 1100px;
+            margin: 10px auto 0;
+        }
+
+        /* 左側グレーのメニューボックス */
+        .mail-sidebar {
+            width: 190px;
+            background: #d9d9d9;
+            padding: 18px 16px;
+            flex-shrink: 0;
+        }
+        .mail-sidebar-title {
+            font-size: 1.35em;
+            font-weight: bold;
+            text-align: center;
+            margin: 0 0 18px 0;
+            color: #111;
+        }
+        .mail-menu-btn {
+            display: block;
+            width: 100%;
+            background: none;
+            border: none;
+            text-align: left;
+            font-size: 1.05em;
+            padding: 8px 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            color: #111;
+            border-radius: 4px;
+        }
+        .mail-menu-btn:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        .mail-menu-btn.active {
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.12);
+        }
+
+        /* 右側グレーのメール一覧テーブル */
+        .mail-list-area {
+            flex: 1;
+            background: #d9d9d9;
+            min-height: 430px;
+        }
+        .mail-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .mail-table th {
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 1.05em;
+            font-weight: normal;
+            border-bottom: 1.5px solid #333;
+            border-right: 1.5px solid #333;
+            color: #111;
+        }
+        .mail-table th:last-child {
+            border-right: none;
+        }
+        .mail-table td {
+            padding: 10px 14px;
+            font-size: 0.98em;
+            border-bottom: 1px solid #bbb;
+            border-right: 1.5px solid #333;
+            color: #111;
+            word-break: break-all;
+        }
+        .mail-table td:last-child {
+            border-right: none;
+        }
+        .title-link {
+            color: #0b57d0;
+            text-decoration: underline;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 1em;
+            text-align: left;
+        }
+        .title-link:hover {
+            color: #003399;
+        }
+
+        /* 通知メッセージ */
+        .alert-msg {
+            max-width: 1100px;
+            margin: 0 auto 12px;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        .alert-success { background: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
+        .alert-error { background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
+
+        /* 最前面モーダル共通 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        /* グレーのウィンドウ本体（作成・受信詳細・送信詳細共通） */
+        .mail-modal-box {
+            width: 560px;
+            max-width: 92vw;
+            background: #d9d9d9;
+            padding: 20px 24px 22px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            position: relative;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .modal-title {
+            font-size: 1.45em;
+            font-weight: normal;
+            margin: 0;
+            color: #111;
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.8em;
+            line-height: 1;
+            cursor: pointer;
+            color: #111;
+            padding: 0 4px;
+        }
+
+        /* 詳細モーダル内の表レイアウト（受信メール・送信メール） */
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 1.5px solid #333;
+            border-bottom: 1.5px solid #333;
+            margin-bottom: 16px;
+        }
+        .detail-table th {
+            width: 105px;
+            padding: 10px 12px;
+            text-align: center;
+            font-weight: normal;
+            font-size: 1.05em;
+            border-bottom: 1.5px solid #333;
+            border-right: 1.5px solid #333;
+            color: #111;
+            vertical-align: top;
+        }
+        .detail-table td {
+            padding: 10px 14px;
+            font-size: 1em;
+            border-bottom: 1.5px solid #333;
+            color: #111;
+            word-break: break-word;
+        }
+        .detail-body-cell {
+            height: 170px;
+            vertical-align: top;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        /* メール作成フォームレイアウト */
+        .compose-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            gap: 10px;
+        }
+        .compose-label {
+            width: 110px;
+            text-align: right;
+            padding-top: 7px;
+            font-size: 1.05em;
+            color: #111;
+            flex-shrink: 0;
+        }
+        .required-mark {
+            color: #e53935;
+            font-weight: bold;
+        }
+        .compose-input {
+            width: 240px;
+            padding: 8px 10px;
+            border: none;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 0.98em;
+        }
+        .compose-textarea {
+            flex: 1;
+            height: 170px;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 0.98em;
+            resize: vertical;
+        }
+        .white-pill-btn {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 7px 22px;
+            font-size: 1em;
+            cursor: pointer;
+            color: #111;
+        }
+        .white-pill-btn:hover {
+            background: #f2f2f2;
+        }
+        .modal-footer-right {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        /* 宛先検索サブモーダル */
+        .search-modal-box {
+            width: 440px;
+            max-width: 90vw;
+            background: #fff;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+        }
+        .user-select-list {
+            max-height: 260px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+        }
+        .user-select-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .user-select-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+<div class="main-content">
+    <!-- 共通上部ヘッダー -->
+    <div class="top-bar">
+        <div class="user-info">
+            <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span>
+            <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span>
+        </div>
+        <th:block th:replace="~{common :: hamburgerBtn}"></th:block>
+    </div>
+
+    <div th:if="${successMessage}" class="alert-msg alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert-msg alert-error" th:text="${errorMessage}"></div>
+
+    <!-- メインコンテンツ（左：メニュー / 右：一覧） -->
+    <div class="mail-layout">
+        <div class="mail-sidebar">
+            <h2 class="mail-sidebar-title">メニュー</h2>
+            <button type="button" class="mail-menu-btn" onclick="openComposeModal()">メール新規作成</button>
+            <button type="button" id="tab-inbox" class="mail-menu-btn"
+                    th:classappend="${activeBox != 'sent'} ? ' active' : ''"
+                    onclick="switchMailBox('inbox')">受信箱</button>
+            <button type="button" id="tab-sent" class="mail-menu-btn"
+                    th:classappend="${activeBox == 'sent'} ? ' active' : ''"
+                    onclick="switchMailBox('sent')">送信済み</button>
+        </div>
+
+        <div class="mail-list-area">
+            <!-- 受信箱一覧 -->
+            <table id="table-inbox" class="mail-table" th:style="${activeBox == 'sent'} ? 'display:none;' : ''">
+                <thead>
+                    <tr>
+                        <th style="width: 48%;">タイトル</th>
+                        <th style="width: 28%;">送信者</th>
+                        <th style="width: 24%;">受信日</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(inboxMails)}">
+                        <td colspan="3" style="text-align: center; color: #555; padding: 30px;">受信メールはありません</td>
+                    </tr>
+                    <tr th:each="m : ${inboxMails}"
+                        th:with="senderDisplay=${userNameMap[m.senderUserId] != null ? userNameMap[m.senderUserId] + ' (' + m.senderUserId + ')' : m.senderUserId}">
+                        <td>
+                            <button type="button" class="title-link"
+                                    th:text="${m.subject}"
+                                    th:attr="data-sender=${senderDisplay},data-sender-id=${m.senderUserId},data-subject=${m.subject},data-body=${m.body}"
+                                    onclick="openInboxDetail(this)"></button>
+                        </td>
+                        <td th:text="${senderDisplay}"></td>
+                        <td th:text="${m.sentAt != null ? #temporals.format(m.sentAt, 'yyyy/MM/dd HH:mm') : ''}"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 送信済み一覧 -->
+            <table id="table-sent" class="mail-table" th:style="${activeBox != 'sent'} ? 'display:none;' : ''">
+                <thead>
+                    <tr>
+                        <th style="width: 48%;">タイトル</th>
+                        <th style="width: 28%;">宛先</th>
+                        <th style="width: 24%;">送信日</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(sentMails)}">
+                        <td colspan="3" style="text-align: center; color: #555; padding: 30px;">送信済みメールはありません</td>
+                    </tr>
+                    <tr th:each="m : ${sentMails}"
+                        th:with="receiverDisplay=${userNameMap[m.receiverUserId] != null ? userNameMap[m.receiverUserId] + ' (' + m.receiverUserId + ')' : m.receiverUserId}">
+                        <td>
+                            <button type="button" class="title-link"
+                                    th:text="${m.subject}"
+                                    th:attr="data-receiver=${receiverDisplay},data-subject=${m.subject},data-body=${m.body}"
+                                    onclick="openSentDetail(this)"></button>
+                        </td>
+                        <td th:text="${receiverDisplay}"></td>
+                        <td th:text="${m.sentAt != null ? #temporals.format(m.sentAt, 'yyyy/MM/dd HH:mm') : ''}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ① 最前面モーダル：メール作成 -->
+<div id="composeModal" class="modal-overlay">
+    <div class="mail-modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">メール作成</h3>
+            <button type="button" class="modal-close-btn" onclick="closeModal('composeModal')" title="閉じる">×</button>
+        </div>
+        <form th:action="@{/mail/send}" method="post">
+            <div class="compose-row">
+                <label class="compose-label" for="compose-receiverUserId">宛先<span class="required-mark">*</span>：</label>
+                <input type="text" id="compose-receiverUserId" name="receiverUserId" maxlength="8" class="compose-input" placeholder="ユーザID（8桁）" required>
+                <button type="button" class="white-pill-btn" onclick="openUserSearchModal()">検索</button>
+            </div>
+            <div class="compose-row">
+                <label class="compose-label" for="compose-subject">タイトル<span class="required-mark">*</span>：</label>
+                <input type="text" id="compose-subject" name="subject" maxlength="32" class="compose-input" style="flex: 1;" required>
+            </div>
+            <div class="compose-row">
+                <label class="compose-label" for="compose-body">本文<span class="required-mark">*</span>：</label>
+                <textarea id="compose-body" name="body" maxlength="256" class="compose-textarea" required></textarea>
+            </div>
+            <div class="modal-footer-right">
+                <button type="submit" class="white-pill-btn">送信</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ② 最前面モーダル：受信メール詳細 -->
+<div id="inboxDetailModal" class="modal-overlay">
+    <div class="mail-modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">受信メール</h3>
+            <button type="button" class="modal-close-btn" onclick="closeModal('inboxDetailModal')" title="閉じる">×</button>
+        </div>
+        <table class="detail-table">
+            <tr>
+                <th>送信者</th>
+                <td id="detail-inbox-sender"></td>
+            </tr>
+            <tr>
+                <th>タイトル</th>
+                <td id="detail-inbox-subject"></td>
+            </tr>
+            <tr>
+                <th>本文</th>
+                <td><div id="detail-inbox-body" class="detail-body-cell"></div></td>
+            </tr>
+        </table>
+        <div class="modal-footer-right">
+            <button type="button" class="white-pill-btn" onclick="replyFromInbox()">メール作成</button>
+        </div>
+    </div>
+</div>
+
+<!-- ③ 最前面モーダル：送信メール詳細 -->
+<div id="sentDetailModal" class="modal-overlay">
+    <div class="mail-modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title">送信メール</h3>
+            <button type="button" class="modal-close-btn" onclick="closeModal('sentDetailModal')" title="閉じる">×</button>
+        </div>
+        <table class="detail-table">
+            <tr>
+                <th>受信者</th>
+                <td id="detail-sent-receiver"></td>
+            </tr>
+            <tr>
+                <th>タイトル</th>
+                <td id="detail-sent-subject"></td>
+            </tr>
+            <tr>
+                <th>本文</th>
+                <td><div id="detail-sent-body" class="detail-body-cell"></div></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- ④ 宛先検索モーダル -->
+<div id="userSearchModal" class="modal-overlay" style="z-index: 3100;">
+    <div class="search-modal-box">
+        <div class="modal-header" style="margin-bottom: 10px;">
+            <h4 style="margin: 0;">宛先ユーザ検索</h4>
+            <button type="button" class="modal-close-btn" onclick="closeModal('userSearchModal')" style="font-size: 1.4em;">×</button>
+        </div>
+        <input type="text" id="userFilterInput" placeholder="IDまたは名前で絞り込み" style="width: 100%; padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px;" oninput="filterUsers()">
+        <div class="user-select-list" id="userSelectList">
+            <div class="user-select-item" th:each="u : ${userList}" th:attr="data-search=${u.userId + ' ' + u.userName}">
+                <span th:text="${u.userId + ' : ' + u.userName}"></span>
+                <button type="button" class="white-pill-btn" style="padding: 4px 12px; font-size: 0.9em;"
+                        th:attr="data-id=${u.userId}" onclick="selectReceiver(this.getAttribute('data-id'))">選択</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 最新の共通水色スライドメニューを呼び出し -->
+<th:block th:replace="~{common :: sideMenu}"></th:block>
+
+<script>
+    let currentReplySenderId = '';
+    let currentReplySubject = '';
+
+    // 受信箱 / 送信済みの表示切り替え
+    function switchMailBox(box) {
+        const inboxTable = document.getElementById('table-inbox');
+        const sentTable = document.getElementById('table-sent');
+        const tabInbox = document.getElementById('tab-inbox');
+        const tabSent = document.getElementById('tab-sent');
+
+        if (box === 'sent') {
+            inboxTable.style.display = 'none';
+            sentTable.style.display = 'table';
+            tabInbox.classList.remove('active');
+            tabSent.classList.add('active');
+        } else {
+            inboxTable.style.display = 'table';
+            sentTable.style.display = 'none';
+            tabInbox.classList.add('active');
+            tabSent.classList.remove('active');
+        }
+    }
+
+    // メール新規作成モーダルを開く
+    function openComposeModal(defaultReceiverId = '', defaultSubject = '') {
+        document.getElementById('compose-receiverUserId').value = defaultReceiverId;
+        document.getElementById('compose-subject').value = defaultSubject.slice(0, 32);
+        document.getElementById('compose-body').value = '';
+        document.getElementById('composeModal').classList.add('show');
+    }
+
+    // 受信メール詳細モーダルを開く
+    function openInboxDetail(btn) {
+        currentReplySenderId = btn.getAttribute('data-sender-id') || '';
+        currentReplySubject = btn.getAttribute('data-subject') || '';
+
+        document.getElementById('detail-inbox-sender').textContent = btn.getAttribute('data-sender') || '';
+        document.getElementById('detail-inbox-subject').textContent = currentReplySubject;
+        document.getElementById('detail-inbox-body').textContent = btn.getAttribute('data-body') || '';
+        document.getElementById('inboxDetailModal').classList.add('show');
+    }
+
+    // 受信メール詳細の「メール作成」ボタンから返信作成画面を開く
+    function replyFromInbox() {
+        closeModal('inboxDetailModal');
+        const reSubject = currentReplySubject ? ('Re:' + currentReplySubject).slice(0, 32) : '';
+        openComposeModal(currentReplySenderId, reSubject);
+    }
+
+    // 送信メール詳細モーダルを開く
+    function openSentDetail(btn) {
+        document.getElementById('detail-sent-receiver').textContent = btn.getAttribute('data-receiver') || '';
+        document.getElementById('detail-sent-subject').textContent = btn.getAttribute('data-subject') || '';
+        document.getElementById('detail-sent-body').textContent = btn.getAttribute('data-body') || '';
+        document.getElementById('sentDetailModal').classList.add('show');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    // 宛先検索モーダル関連
+    function openUserSearchModal() {
+        document.getElementById('userFilterInput').value = '';
+        filterUsers();
+        document.getElementById('userSearchModal').classList.add('show');
+    }
+
+    function filterUsers() {
+        const kw = document.getElementById('userFilterInput').value.trim().toLowerCase();
+        document.querySelectorAll('#userSelectList .user-select-item').forEach(item => {
+            const text = (item.getAttribute('data-search') || '').toLowerCase();
+            item.style.display = text.includes(kw) ? 'flex' : 'none';
+        });
+    }
+
+    function selectReceiver(userId) {
+        document.getElementById('compose-receiverUserId').value = userId;
+        closeModal('userSearchModal');
+    }
+</script>
+</body>
+</html>
