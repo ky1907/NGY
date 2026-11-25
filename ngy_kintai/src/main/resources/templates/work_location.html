@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>勤務場所登録 - 勤怠管理システム</title>
+    <!-- 共通CSSの読み込み -->
+    <th:block th:replace="~{common :: menuStyle}"></th:block>
+    <style>
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        /* 画面全体を使うグレー枠コンテナ */
+        .main-panel {
+            background-color: #d9d9d9;
+            width: 100%;
+            flex: 1;
+            min-height: calc(100vh - 110px);
+            padding: 50px 70px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .main-panel h2 {
+            margin-top: 0;
+            font-size: 2.2em;
+            font-weight: normal;
+            margin-bottom: 60px;
+        }
+        .form-center {
+            margin-top: 20px;
+            margin-left: 40px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 1.4em;
+        }
+        .required-mark {
+            color: red;
+        }
+        .form-row select {
+            width: 360px;
+            height: 48px;
+            border: none;
+            border-radius: 8px;
+            padding: 0 16px;
+            font-size: 1em;
+            background-color: #ffffff;
+        }
+        .submit-area {
+            display: flex;
+            justify-content: flex-end;
+            padding-right: 120px;
+            padding-bottom: 40px;
+        }
+        .submit-btn {
+            width: 150px;
+            height: 50px;
+            border: none;
+            border-radius: 8px;
+            background-color: #ffffff;
+            font-size: 1.3em;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #f0f0f0;
+        }
+        .error-msg {
+            color: red;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+        .complete-msg {
+            color: red;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <!-- 上部ヘッダー（左上にユーザID・名前、右上に三本線ボタン） -->
+    <div class="top-bar">
+        <div class="user-info">
+            <span th:text="${loginUser.userId}">ユーザID</span>
+            <span th:text="${loginUser.userName}">名前</span>
+        </div>
+        <button th:replace="~{common :: hamburgerBtn}"></button>
+    </div>
+
+    <!-- メインコンテンツ（画面全体に広がるグレー枠） -->
+    <div class="main-panel">
+        <form th:action="@{/work_location}" method="post" style="display: flex; flex-direction: column; flex: 1; justify-content: space-between;">
+            <div>
+                <h2>勤務場所登録</h2>
+
+                <div class="form-center">
+                    <div class="form-row">
+                        <label for="workLocationId">勤務場所<span class="required-mark">＊</span>：</label>
+                        <select id="workLocationId" name="workLocationId" required>
+                            <option value="" disabled th:selected="${loginUser.workLocationId == null}">選択してください</option>
+                            <option th:each="loc : ${locationList}"
+                                    th:value="${loc.workLocationId}"
+                                    th:text="${loc.workLocationName}"
+                                    th:selected="${loc.workLocationId == loginUser.workLocationId}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- エラー・完了メッセージ表示部分 -->
+                    <p class="error-msg" th:if="${errorMessage}" th:text="${errorMessage}"></p>
+                    <p class="complete-msg" th:if="${completeMessage}" th:text="${completeMessage}"></p>
+                </div>
+            </div>
+
+            <div class="submit-area">
+                <button type="submit" class="submit-btn">登録</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 水色スライドメニュー本体＋開閉スクリプト -->
+<th:block th:replace="~{common :: sideMenu}"></th:block>
+
+</body>
+</html>
