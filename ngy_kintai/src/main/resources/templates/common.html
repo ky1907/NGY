@@ -10,13 +10,11 @@
                 font-family: sans-serif;
                 margin: 0;
                 padding: 0;
-                background-color: #fff;
                 min-height: 100vh;
             }
             .main-content {
                 padding: 20px 30px;
             }
-            /* 上部ヘッダー（左上にユーザID・名前、右上に三本線ボタン） */
             .top-bar {
                 display: flex;
                 align-items: center;
@@ -28,58 +26,98 @@
                 gap: 30px;
                 font-size: 1.1em;
             }
-            /* 右上の四角く囲われた横三本線ボタン */
+            /* 右上のカジュアルな角丸三本線ボタン */
             .hamburger-btn {
-                width: 44px;
-                height: 44px;
-                background-color: #d9d9d9;
-                border: 2px solid #000;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                gap: 6px;
-                cursor: pointer;
-                padding: 0;
-                z-index: 1100;
+                width: 44px !important;
+                height: 44px !important;
+                background-color: #ffffff !important;
+                border: 1.5px solid #cbd5e1 !important;
+                border-radius: 12px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 5px !important;
+                cursor: pointer !important;
+                padding: 0 !important;
+                z-index: 1100 !important;
+                box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
+                transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+            }
+            .hamburger-btn:hover {
+                background-color: #f0fdfa !important;
+                border-color: #2dd4bf !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12) !important;
             }
             .hamburger-btn span {
-                display: block;
-                width: 24px;
-                height: 3px;
-                background-color: #000;
+                display: block !important;
+                width: 20px !important;
+                height: 2.5px !important;
+                border-radius: 999px !important;
+                background-color: #1e293b !important;
             }
-            /* ボタンを押したときに開く水色スライドメニュー */
+            /* ボタンを押したときに開くカジュアル水色スライドメニュー */
             .side-menu {
-                position: fixed;
-                top: 0;
-                right: -250px;
-                width: 240px;
-                height: 100vh;
-                background-color: #a8fff0;
-                padding: 75px 22px 20px;
-                transition: right 0.3s ease;
-                z-index: 1000;
-                box-shadow: -2px 0 6px rgba(0,0,0,0.15);
+                position: fixed !important;
+                top: 0 !important;
+                right: -260px !important;
+                width: 248px !important;
+                height: 100vh !important;
+                background: linear-gradient(180deg, #b8fff3 0%, #a8fff0 100%) !important;
+                border-top-left-radius: 20px !important;
+                border-bottom-left-radius: 20px !important;
+                padding: 76px 16px 24px !important;
+                transition: right 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
+                z-index: 1000 !important;
+                box-shadow: -6px 0 20px rgba(15, 23, 42, 0.14) !important;
             }
             .side-menu.open {
-                right: 0;
+                right: 0 !important;
+            }
+            .menu-items {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
             }
             .menu-items a {
-                display: block;
-                color: #000;
-                text-decoration: none;
-                font-size: 1.15em;
-                margin-bottom: 16px;
-                line-height: 1.3;
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
+                color: #0f172a !important;
+                text-decoration: none !important;
+                font-size: 1.03em !important;
+                font-weight: 500 !important;
+                padding: 9px 12px !important;
+                border-radius: 10px !important;
+                line-height: 1.35 !important;
+                transition: background-color 0.15s ease, transform 0.15s ease !important;
             }
             .menu-items a:hover {
-                text-decoration: underline;
+                background-color: rgba(255, 255, 255, 0.72) !important;
+                transform: translateX(-2px) !important;
+            }
+            .menu-icon {
+                width: 19px;
+                height: 19px;
+                flex-shrink: 0;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
             }
             .menu-items a.logout-link {
-                color: #ff0000;
-                font-size: 1.35em;
-                margin-top: 24px;
+                color: #dc2626 !important;
+                font-size: 1.08em !important;
+                font-weight: 600 !important;
+                margin-top: 14px !important;
+                padding-top: 12px !important;
+                border-top: 1px solid rgba(15, 23, 42, 0.12) !important;
+                border-radius: 10px !important;
+            }
+            .menu-items a.logout-link:hover {
+                background-color: rgba(254, 226, 226, 0.85) !important;
             }
         </style>
     </th:block>
@@ -97,17 +135,79 @@
     <th:block th:fragment="sideMenu">
         <div id="sideMenu" class="side-menu">
             <div class="menu-items">
-                <a th:href="@{/attendance}">勤怠登録</a>
-                <a th:href="@{/calendar}">カレンダー</a>
-                <a th:href="@{/mail}">メール</a>
-                <a th:href="@{/contact_add}">連絡先</a>
-                <a th:href="@{/work_location}">勤務場所</a>
-                <a th:href="@{/working_status}">部署内勤務状況</a>
-                <th:block th:if="${loginUser.roleId == 'R01'}">
-                    <a th:href="@{/user_edit}">ユーザ登録</a>
-                    <a th:href="@{/working_time}">勤務時間参照</a>
+                <a th:href="@{/attendance}">
+                    <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <polyline points="12 7 12 12 15 15"></polyline>
+                    </svg>
+                    <span>勤怠登録</span>
+                </a>
+                <a th:href="@{/calendar}">
+                    <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="17" rx="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span>カレンダー</span>
+                </a>
+                <a th:href="@{/mail}">
+                    <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                        <polyline points="3 7 12 13 21 7"></polyline>
+                    </svg>
+                    <span>メール</span>
+                </a>
+                <a th:href="@{/contact_add}">
+                    <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="8" r="4"></circle>
+                        <path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6"></path>
+                    </svg>
+                    <span>連絡先</span>
+                </a>
+                <a th:href="@{/work_location}">
+                    <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 21s-6-5.35-6-10a6 6 0 0 1 12 0c0 4.65-6 10-6 10z"></path>
+                        <circle cx="12" cy="11" r="2"></circle>
+                    </svg>
+                    <span>勤務場所</span>
+                </a>
+                <a th:href="@{/working_status}">
+                    <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="9" cy="8" r="3"></circle>
+                        <path d="M3 19c0-2.8 2.7-4.8 6-4.8s6 2 6 4.8"></path>
+                        <circle cx="17" cy="9" r="2.2"></circle>
+                        <path d="M16 14.5c2.4.3 4.5 1.8 4.5 4.5"></path>
+                    </svg>
+                    <span>部署内勤務状況</span>
+                </a>
+                <th:block th:if="${loginUser != null and loginUser.roleId == 'R01'}">
+                    <a th:href="@{/user_edit}">
+                        <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="9.5" cy="8" r="3.5"></circle>
+                            <path d="M3 19c0-3 2.9-5 6.5-5s6.5 2 6.5 5"></path>
+                            <line x1="19" y1="8" x2="19" y2="14"></line>
+                            <line x1="16" y1="11" x2="22" y2="11"></line>
+                        </svg>
+                        <span>ユーザ登録</span>
+                    </a>
+                    <a th:href="@{/working_time}">
+                        <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <line x1="5" y1="19" x2="5" y2="11"></line>
+                            <line x1="12" y1="19" x2="12" y2="6"></line>
+                            <line x1="19" y1="19" x2="19" y2="14"></line>
+                        </svg>
+                        <span>勤務時間参照</span>
+                    </a>
                 </th:block>
-                <a th:href="@{/logout}" class="logout-link">ログアウト</a>
+                <a th:href="@{/logout}" class="logout-link">
+                    <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>ログアウト</span>
+                </a>
             </div>
         </div>
         <script>
