@@ -61,6 +61,8 @@ public class attendanceController {
             today.setEndTime(null);
             today.setWorkStatusId(workStatusId);
             entityManager.merge(today);
+
+            return "redirect:/calendar";
         } else if ("1".equals(attendanceType)) {
             // 退勤打刻（出社・在宅は選択されないため、出勤時の勤務場所を引き継ぐ）
             String savedWorkStatusId = (today != null && today.getWorkStatusId() != null && !"W03".equals(today.getWorkStatusId()))
@@ -109,6 +111,10 @@ public class attendanceController {
             monthly.setMonthlyActualMinutes((monthly.getMonthlyActualMinutes() == null ? 0 : monthly.getMonthlyActualMinutes()) + actualMins);
             monthly.setMonthlyOvertimeMinutes((monthly.getMonthlyOvertimeMinutes() == null ? 0 : monthly.getMonthlyOvertimeMinutes()) + overtimeMins);
             monthTimeManagementRepository.save(monthly);
+
+            // 退勤処理完了後にログアウト（セッション破棄）してログイン画面へ遷移
+            session.invalidate();
+            return "redirect:/login";
         }
 
         return "redirect:/calendar";

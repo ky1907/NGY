@@ -57,8 +57,13 @@ public class user_editController {
             if (form.getPassword() != null && !form.getPassword().isEmpty()) {
                 existing.setPassword(form.getPassword());
             }
-            existing.setEmailAddress(form.getEmailAddress());
-            existing.setPhoneNumber(form.getPhoneNumber());
+            // 編集フォームから送られてこない（null）場合は既存の連絡先を維持する
+            if (form.getEmailAddress() != null) {
+                existing.setEmailAddress(form.getEmailAddress());
+            }
+            if (form.getPhoneNumber() != null) {
+                existing.setPhoneNumber(form.getPhoneNumber());
+            }
             existing.setDepartmentId(form.getDepartmentId());
             existing.setWorkLocationId(form.getWorkLocationId());
             existing.setRoleId(form.getRoleId());

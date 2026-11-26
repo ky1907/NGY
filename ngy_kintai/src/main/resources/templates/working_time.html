@@ -32,8 +32,8 @@
     <!-- 上部ヘッダー（連絡先登録画面と同じ位置・余白） -->
     <div class="top-bar">
         <div class="user-info">
-            <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span>
-            <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span>
+            <a>ID : <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span></a>
+            <a>名前 : <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span></a>
         </div>
         <!-- 共通三本線ボタンを呼び出し -->
         <button th:replace="~{common :: hamburgerBtn}"></button>
