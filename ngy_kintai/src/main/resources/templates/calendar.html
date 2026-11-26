@@ -74,13 +74,89 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
         }
 
-        /* 予定カラーバリエーション */
-        .color-sky    { background-color: #cfe2ff; color: #084298; border-left: 4px solid #0d6efd; }
-        .color-blue   { background-color: #9ec5fe; color: #052c65; border-left: 4px solid #0a58ca; }
+        /* 予定カラーバリエーション（水色＝明るいシアン系／青＝濃いロイヤルブルー系） */
+        .color-sky    { background-color: #e0f7fa; color: #006064; border-left: 4px solid #00acc1; }
+        .color-blue   { background-color: #1d4ed8; color: #ffffff; border-left: 4px solid #1e3a8a; }
         .color-green  { background-color: #d1e7dd; color: #0f5132; border-left: 4px solid #198754; }
         .color-amber  { background-color: #fff3cd; color: #664d03; border-left: 4px solid #ffc107; }
         .color-rose   { background-color: #f8d7da; color: #842029; border-left: 4px solid #dc3545; }
         .color-purple { background-color: #e2d9f3; color: #3d1e73; border-left: 4px solid #6f42c1; }
+
+        /* カスタムカラーピッカー（カーソル合わせで色・枠線がはっきりわかるUI） */
+        .color-picker-wrapper {
+            position: relative;
+        }
+        .color-picker-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.45rem 0.75rem;
+            text-align: left;
+            cursor: pointer;
+        }
+        .color-picker-btn:hover {
+            border-color: #86b7fe;
+        }
+        .color-swatch {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            display: inline-block;
+            flex-shrink: 0;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        .swatch-sky    { background-color: #e0f7fa; border-left: 3px solid #00acc1; }
+        .swatch-blue   { background-color: #1d4ed8; border-left: 3px solid #1e3a8a; }
+        .swatch-green  { background-color: #d1e7dd; border-left: 3px solid #198754; }
+        .swatch-amber  { background-color: #fff3cd; border-left: 3px solid #ffc107; }
+        .swatch-rose   { background-color: #f8d7da; border-left: 3px solid #dc3545; }
+        .swatch-purple { background-color: #e2d9f3; border-left: 3px solid #6f42c1; }
+
+        .color-picker-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            padding: 6px;
+            z-index: 1060;
+        }
+        .color-picker-menu.show {
+            display: block;
+        }
+        .color-option-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            padding: 7px 10px;
+            margin-bottom: 3px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+        }
+        .color-option-item:last-child {
+            margin-bottom: 0;
+        }
+        /* カーソルを合わせたとき（:hover）に色が強調されて浮き出る */
+        .color-option-item:hover {
+            transform: translateX(3px);
+            border-color: rgba(0, 0, 0, 0.35);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+            filter: brightness(0.97);
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -179,9 +255,11 @@
                         <label class="form-label">タイトル</label>
                         <input type="text" class="form-control" id="title" name="title" required>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label">表示カラー</label>
-                        <select class="form-select" id="eventColor" name="eventColor">
+                        <!-- フォーム送信用の実体 -->
+                        <select class="d-none" id="eventColor" name="eventColor">
                             <option value="sky">水色（通常・業務）</option>
                             <option value="blue">青（会議・打ち合わせ）</option>
                             <option value="green">緑（休暇・外出）</option>
@@ -189,7 +267,45 @@
                             <option value="rose">赤（重要・締切）</option>
                             <option value="purple">紫（その他）</option>
                         </select>
+
+                        <!-- 色見本＆ホバー強調付きドロップダウン -->
+                        <div class="color-picker-wrapper" id="colorPickerWrapper">
+                            <button type="button" class="color-picker-btn" id="colorPickerBtn" onclick="toggleColorMenu(event)">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="color-swatch swatch-sky" id="selectedColorSwatch"></span>
+                                    <span id="selectedColorLabel">水色（通常・業務）</span>
+                                </span>
+                                <span class="text-muted">▼</span>
+                            </button>
+                            <div class="color-picker-menu" id="colorPickerMenu">
+                                <button type="button" class="color-option-item color-sky" data-value="sky" data-label="水色（通常・業務）" onclick="selectColorOption(this)">
+                                    <span class="color-swatch swatch-sky"></span>
+                                    <span>水色（通常・業務）</span>
+                                </button>
+                                <button type="button" class="color-option-item color-blue" data-value="blue" data-label="青（会議・打ち合わせ）" onclick="selectColorOption(this)">
+                                    <span class="color-swatch swatch-blue"></span>
+                                    <span>青（会議・打ち合わせ）</span>
+                                </button>
+                                <button type="button" class="color-option-item color-green" data-value="green" data-label="緑（休暇・外出）" onclick="selectColorOption(this)">
+                                    <span class="color-swatch swatch-green"></span>
+                                    <span>緑（休暇・外出）</span>
+                                </button>
+                                <button type="button" class="color-option-item color-amber" data-value="amber" data-label="黄色（注意・リマインド）" onclick="selectColorOption(this)">
+                                    <span class="color-swatch swatch-amber"></span>
+                                    <span>黄色（注意・リマインド）</span>
+                                </button>
+                                <button type="button" class="color-option-item color-rose" data-value="rose" data-label="赤（重要・締切）" onclick="selectColorOption(this)">
+                                    <span class="color-swatch swatch-rose"></span>
+                                    <span>赤（重要・締切）</span>
+                                </button>
+                                <button type="button" class="color-option-item color-purple" data-value="purple" data-label="紫（その他）" onclick="selectColorOption(this)">
+                                    <span class="color-swatch swatch-purple"></span>
+                                    <span>紫（その他）</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="row">
                         <div class="col mb-3">
                             <label class="form-label">開始日時</label>
@@ -224,6 +340,40 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+    const COLOR_LABELS = {
+        sky: '水色（通常・業務）',
+        blue: '青（会議・打ち合わせ）',
+        green: '緑（休暇・外出）',
+        amber: '黄色（注意・リマインド）',
+        rose: '赤（重要・締切）',
+        purple: '紫（その他）'
+    };
+
+    function setColorSelection(colorValue) {
+        const validColor = COLOR_LABELS[colorValue] ? colorValue : 'sky';
+        document.getElementById('eventColor').value = validColor;
+        document.getElementById('selectedColorLabel').innerText = COLOR_LABELS[validColor];
+        const swatch = document.getElementById('selectedColorSwatch');
+        swatch.className = 'color-swatch swatch-' + validColor;
+    }
+
+    function toggleColorMenu(event) {
+        event.stopPropagation();
+        document.getElementById('colorPickerMenu').classList.toggle('show');
+    }
+
+    function selectColorOption(el) {
+        setColorSelection(el.getAttribute('data-value'));
+        document.getElementById('colorPickerMenu').classList.remove('show');
+    }
+
+    document.addEventListener('click', function (e) {
+        const wrapper = document.getElementById('colorPickerWrapper');
+        const menu = document.getElementById('colorPickerMenu');
+        if (wrapper && menu && !wrapper.contains(e.target)) {
+            menu.classList.remove('show');
+        }
+    });
 
     function openCreateModal() {
         document.getElementById('modalTitle').innerText = '予定の登録';
@@ -231,7 +381,8 @@
         idInput.value = '';
         idInput.disabled = true;
         document.getElementById('title').value = '';
-        document.getElementById('eventColor').value = 'sky';
+        setColorSelection('sky');
+        document.getElementById('colorPickerMenu').classList.remove('show');
         document.getElementById('startTime').value = '';
         document.getElementById('endTime').value = '';
         document.getElementById('detail').value = '';
@@ -245,7 +396,8 @@
         idInput.disabled = false;
         idInput.value = el.getAttribute('data-id') || '';
         document.getElementById('title').value = el.getAttribute('data-title') || '';
-        document.getElementById('eventColor').value = el.getAttribute('data-color') || 'sky';
+        setColorSelection(el.getAttribute('data-color') || 'sky');
+        document.getElementById('colorPickerMenu').classList.remove('show');
         document.getElementById('startTime').value = el.getAttribute('data-start') || '';
         document.getElementById('endTime').value = el.getAttribute('data-end') || '';
         document.getElementById('detail').value = el.getAttribute('data-detail') || '';
