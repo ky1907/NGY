@@ -9,23 +9,26 @@
         .mail-layout {
             display: flex;
             gap: 20px;
-            align-items: flex-start;
-            max-width: 1100px;
-            margin: 10px auto 0;
+            align-items: stretch;
+            width: 100%;
+            max-width: 1440px;
+            margin: 6px auto 0;
+            box-sizing: border-box;
         }
 
         /* 左側グレーのメニューボックス */
         .mail-sidebar {
-            width: 190px;
+            width: 260px;
             background: #d9d9d9;
-            padding: 18px 16px;
+            padding: 28px 22px;
             flex-shrink: 0;
+            box-sizing: border-box;
         }
         .mail-sidebar-title {
-            font-size: 1.35em;
+            font-size: 1.55em;
             font-weight: bold;
             text-align: center;
-            margin: 0 0 18px 0;
+            margin: 0 0 24px 0;
             color: #111;
         }
         .mail-menu-btn {
@@ -34,9 +37,9 @@
             background: none;
             border: none;
             text-align: left;
-            font-size: 1.05em;
-            padding: 8px 6px;
-            margin-bottom: 8px;
+            font-size: 1.18em;
+            padding: 12px 10px;
+            margin-bottom: 10px;
             cursor: pointer;
             color: #111;
             border-radius: 4px;
@@ -53,7 +56,8 @@
         .mail-list-area {
             flex: 1;
             background: #d9d9d9;
-            min-height: 430px;
+            min-height: 560px;
+            box-sizing: border-box;
         }
         .mail-table {
             width: 100%;
@@ -61,10 +65,10 @@
             table-layout: fixed;
         }
         .mail-table th {
-            padding: 10px 14px;
+            padding: 14px 18px;
             text-align: left;
-            font-size: 1.05em;
-            font-weight: normal;
+            font-size: 1.15em;
+            font-weight: bold;
             border-bottom: 1.5px solid #333;
             border-right: 1.5px solid #333;
             color: #111;
@@ -73,8 +77,8 @@
             border-right: none;
         }
         .mail-table td {
-            padding: 10px 14px;
-            font-size: 0.98em;
+            padding: 14px 18px;
+            font-size: 1.05em;
             border-bottom: 1px solid #bbb;
             border-right: 1.5px solid #333;
             color: #111;
@@ -99,11 +103,13 @@
 
         /* 通知メッセージ */
         .alert-msg {
-            max-width: 1100px;
-            margin: 0 auto 12px;
+            width: 100%;
+            max-width: 1440px;
+            margin: 0 auto 10px;
             padding: 10px 14px;
             border-radius: 4px;
             font-size: 0.95em;
+            box-sizing: border-box;
         }
         .alert-success { background: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
         .alert-error { background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
@@ -273,8 +279,8 @@
     <!-- 共通上部ヘッダー -->
     <div class="top-bar">
         <div class="user-info">
-            <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span>
-            <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span>
+            <a>ID : <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span></a>
+            <a>名前 : <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span></a>
         </div>
         <th:block th:replace="~{common :: hamburgerBtn}"></th:block>
     </div>
@@ -307,7 +313,7 @@
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(inboxMails)}">
-                        <td colspan="3" style="text-align: center; color: #555; padding: 30px;">受信メールはありません</td>
+                        <td colspan="3" style="text-align: center; color: #555; padding: 36px;">受信メールはありません</td>
                     </tr>
                     <tr th:each="m : ${inboxMails}"
                         th:with="senderDisplay=${userNameMap[m.senderUserId] != null ? userNameMap[m.senderUserId] + ' (' + m.senderUserId + ')' : m.senderUserId}">
@@ -334,7 +340,7 @@
                 </thead>
                 <tbody>
                     <tr th:if="${#lists.isEmpty(sentMails)}">
-                        <td colspan="3" style="text-align: center; color: #555; padding: 30px;">送信済みメールはありません</td>
+                        <td colspan="3" style="text-align: center; color: #555; padding: 36px;">送信済みメールはありません</td>
                     </tr>
                     <tr th:each="m : ${sentMails}"
                         th:with="receiverDisplay=${userNameMap[m.receiverUserId] != null ? userNameMap[m.receiverUserId] + ' (' + m.receiverUserId + ')' : m.receiverUserId}">

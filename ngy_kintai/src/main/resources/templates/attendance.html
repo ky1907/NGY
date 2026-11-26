@@ -9,9 +9,22 @@
         /* メインカード */
         .container { max-width: 520px; margin: 40px auto; background: #fff; padding: 30px; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); text-align: center; }
         .btn-group { display: flex; justify-content: space-around; margin: 20px 0; gap: 15px; }
-        .select-btn { flex: 1; height: 60px; font-size: 1.1em; border: 2px solid #555; background: #fff; color: #222; cursor: pointer; border-radius: 6px; transition: all 0.15s; }
-        .select-btn:hover { background: #f0f0f0; }
-        .select-btn.selected { background: #555; color: #fff; font-weight: bold; }
+
+        .select-attendance-btn { flex: 1; height: 60px; font-size: 1.1em; border: 2px solid #555; background: #00eeff; color: #fff; cursor: pointer; border-radius: 6px; transition: all 0.15s; }
+        .select-attendance-btn:hover { background: #21a6ad; }
+        .select-attendance-btn.selected { background: #21a6ad; color: #fff; font-weight: bold; }
+
+        .select-leaving-btn { flex: 1; height: 60px; font-size: 1.1em; border: 2px solid #555; background: #ff2727; color: #fff; cursor: pointer; border-radius: 6px; transition: all 0.15s; }
+        .select-leaving-btn:hover { background: #b82323; }
+        .select-leaving-btn.selected { background: #b82323; color: #fff; font-weight: bold; }
+
+        .select-office-btn { flex: 1; height: 60px; font-size: 1.1em; border: 2px solid #555; background: #97ff56; color: #fff; cursor: pointer; border-radius: 6px; transition: all 0.15s; }
+        .select-office-btn:hover { background: #67bb32; }
+        .select-office-btn.selected { background: #67bb32; color: #fff; font-weight: bold; }
+
+        .select-home-btn { flex: 1; height: 60px; font-size: 1.1em; border: 2px solid #555; background: #ffa930; color: #fff; cursor: pointer; border-radius: 6px; transition: all 0.15s; }
+        .select-home-btn:hover { background: #cc8726; }
+        .select-home-btn.selected { background: #cc8726; color: #fff; font-weight: bold; }
 
         #workStatusArea { display: none; }
         #workStatusArea.show { display: block; }
@@ -25,8 +38,8 @@
     <!-- 共通上部ヘッダー -->
     <div class="top-bar">
         <div class="user-info">
-            <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span>
-            <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span>
+            <a>ID : <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span></a>
+            <a>名前 : <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span></a>
         </div>
         <!-- 共通三本線ボタンを呼び出し -->
         <th:block th:replace="~{common :: hamburgerBtn}"></th:block>
@@ -40,15 +53,15 @@
 
             <!-- 出勤 / 退勤 選択 -->
             <div class="btn-group">
-                <button type="button" class="select-btn type-btn" onclick="selectType('0', this)">出勤</button>
-                <button type="button" class="select-btn type-btn" onclick="selectType('1', this)">退勤</button>
+                <button type="button" class="select-attendance-btn type-btn" onclick="selectType('0', this)">出勤</button>
+                <button type="button" class="select-leaving-btn type-btn" onclick="selectType('1', this)">退勤</button>
             </div>
 
             <!-- 出社 / 在宅 選択（出勤時のみ表示） -->
             <div id="workStatusArea">
                 <div class="btn-group">
-                    <button type="button" class="select-btn status-btn" onclick="selectStatus('W01', this)">出社</button>
-                    <button type="button" class="select-btn status-btn" onclick="selectStatus('W02', this)">在宅</button>
+                    <button type="button" class="select-office-btn status-btn" onclick="selectStatus('W01', this)">出社</button>
+                    <button type="button" class="select-home-btn status-btn" onclick="selectStatus('W02', this)">在宅</button>
                 </div>
             </div>
 
@@ -96,6 +109,10 @@
         if (typeVal === '0' && !statusVal) {
             alert('出勤時は「出社」または「在宅」を選択してください。');
             return false;
+        }
+        // 退勤（'1'）の場合は退勤登録後にログアウトされる旨を確認
+        if (typeVal === '1') {
+            return confirm('退勤を登録してログアウトしますか？');
         }
         return true;
     }

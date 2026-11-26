@@ -68,8 +68,8 @@
     <!-- 上部ヘッダー（連絡先登録画面と同じ位置・余白） -->
     <div class="top-bar">
         <div class="user-info">
-            <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span>
-            <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span>
+            <a>ID : <span th:if="${loginUser != null}" th:text="${loginUser.userId}">ユーザID</span></a>
+            <a>名前 : <span th:if="${loginUser != null}" th:text="${loginUser.userName}">名前</span></a>
         </div>
         <!-- 共通三本線ボタンを呼び出し -->
         <button th:replace="~{common :: hamburgerBtn}"></button>
@@ -137,7 +137,7 @@
                     <div class="panel-header">
                         <h3 class="panel-title">編集</h3>
                     </div>
-                    <form th:action="@{/user_edit/save}" method="post" onsubmit="return confirmAdminRole('edit-role')">
+                    <form th:action="@{/user_edit/save}" method="post" onsubmit="return editAdminRole('edit-role')">
                         <div class="field-row">
                             <div class="field-label-area">
                                 <button type="button" class="search-mini-btn" onclick="searchUser('edit')">検索</button>
@@ -294,6 +294,14 @@
         const roleVal = document.getElementById(roleSelectId).value;
         if (roleVal === 'R01') {
             return confirm('管理者アカウントの登録でよろしかったですか？');
+        }
+        return true;
+    }
+
+    function editAdminRole(roleSelectId) {
+        const roleVal = document.getElementById(roleSelectId).value;
+        if (roleVal === 'R01') {
+            return confirm('管理者アカウントの編集でよろしかったですか？');
         }
         return true;
     }
