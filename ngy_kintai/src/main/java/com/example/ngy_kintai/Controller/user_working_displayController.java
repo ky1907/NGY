@@ -141,21 +141,46 @@ public class user_working_displayController {
     @GetMapping("/working_status")
     public String showWorkingStatus(@RequestParam(value = "workStatusId", required = false) String workStatusId,
                                     @RequestParam(value = "workLocationId", required = false) String workLocationId,
+                                    @RequestParam(value = "departmentId", required = false) String departmentId,
                                     HttpSession session,
                                     Model model) {
         user_Entity loginUser = (user_Entity) session.getAttribute("loginUser");
         if (loginUser == null) return "redirect:/login";
 
+        // 管理者判定（roleId が "R01" または "1" を管理者とする）
+        String roleId = loginUser.getRoleId();
+        boolean isAdmin = "R01".equals(roleId) || "1".equals(roleId);
+
+        // 各マスタ取得
         List<work_status_Entity> statusMasterList = entityManager
                 .createQuery("SELECT s FROM work_status_Entity s ORDER BY s.workStatusId ASC", work_status_Entity.class)
                 .getResultList();
         List<work_location_Entity> locationMasterList = entityManager
                 .createQuery("SELECT l FROM work_location_Entity l ORDER BY l.workLocationId ASC", work_location_Entity.class)
                 .getResultList();
+        List<department_Entity> departmentMasterList = entityManager
+                .createQuery("SELECT d FROM department_Entity d ORDER BY d.departmentId ASC", department_Entity.class)
+                .getResultList();
 
+        // 表示対象部署の決定（管理者で部署選択された場合はその部署、それ以外は自分の所属部署）
+        String targetDepartmentId = loginUser.getDepartmentId();
+        if (isAdmin && departmentId != null && !departmentId.isEmpty()) {
+            targetDepartmentId = departmentId;
+        }
+
+        // 表示中の部署名を取得
+        String currentDepartmentName = "";
+        if (targetDepartmentId != null && !targetDepartmentId.isEmpty()) {
+            department_Entity dept = entityManager.find(department_Entity.class, targetDepartmentId);
+            if (dept != null) {
+                currentDepartmentName = dept.getDepartmentName();
+            }
+        }
+
+        // 対象部署の社員一覧を取得（50音順）
         List<user_Entity> deptUsers;
-        if (loginUser.getDepartmentId() != null) {
-            deptUsers = userRepository.findByDepartmentIdOrderByUserNameAsc(loginUser.getDepartmentId());
+        if (targetDepartmentId != null && !targetDepartmentId.isEmpty()) {
+            deptUsers = userRepository.findByDepartmentIdOrderByUserNameAsc(targetDepartmentId);
         } else {
             deptUsers = userRepository.findAllByOrderByUserIdAsc();
         }
@@ -192,8 +217,12 @@ public class user_working_displayController {
         }
 
         model.addAttribute("loginUser", loginUser);
+        model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("currentDepartmentName", currentDepartmentName);
+        model.addAttribute("selectedDepartmentId", targetDepartmentId);
         model.addAttribute("selectedStatusId", workStatusId);
         model.addAttribute("selectedLocationId", workLocationId);
+        model.addAttribute("departmentMasterList", departmentMasterList);
         model.addAttribute("statusMasterList", statusMasterList);
         model.addAttribute("locationMasterList", locationMasterList);
         model.addAttribute("statusList", statusList);
@@ -211,17 +240,13 @@ public class user_working_displayController {
         }
         String digits = rawPhone.replaceAll("[^0-9]", "");
         if (digits.startsWith("0") && digits.length() == 11) {
-            // 国内携帯(090/080/070)・IP電話(050): 3桁-4桁-4桁
             return digits.substring(0, 3) + "-" + digits.substring(3, 7) + "-" + digits.substring(7);
         } else if (digits.startsWith("0") && digits.length() == 10) {
-            // 東京(03)・大阪(06): 2桁-4桁-4桁
             if (digits.startsWith("03") || digits.startsWith("06")) {
                 return digits.substring(0, 2) + "-" + digits.substring(2, 6) + "-" + digits.substring(6);
             }
-            // 名古屋(052)などその他の固定電話: 3桁-3桁-4桁
             return digits.substring(0, 3) + "-" + digits.substring(3, 6) + "-" + digits.substring(6);
         }
-        // 8〜9桁や海外番号（12〜15桁、0以外始まり）はそのまま返す
         return digits;
     }
 }
